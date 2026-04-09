@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+
+<html lang="zh-Hans">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Noto+Sans+SC:wght@300;400;500;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#f976ba",
+                        "secondary": "#006382",
+                        "tertiary": "#a02d70",
+                        "on-primary-fixed": "#00121e",
+                        "secondary-fixed": "#93dbff",
+                        "on-secondary": "#e5f5ff",
+                        "tertiary-dim": "#912063",
+                        "surface-bright": "#f3f7ff",
+                        "primary-container": "#34b5fa",
+                        "error-dim": "#9f0519",
+                        "on-secondary-fixed": "#00394c",
+                        "primary-dim": "#00557b",
+                        "error": "#b31b25",
+                        "surface-container": "#daeaff",
+                        "on-background": "#0c314e",
+                        "tertiary-container": "#ff8bc5",
+                        "on-secondary-container": "#004d67",
+                        "primary-fixed": "#34b5fa",
+                        "primary-fixed-dim": "#17a8ec",
+                        "on-surface": "#0c314e",
+                        "on-tertiary-fixed-variant": "#73004b",
+                        "on-tertiary": "#ffeff3",
+                        "inverse-primary": "#34b5fa",
+                        "surface": "#f3f7ff",
+                        "surface-dim": "#b5d8ff",
+                        "error-container": "#fb5151",
+                        "background": "#f3f7ff",
+                        "outline-variant": "#91b0d3",
+                        "surface-container-highest": "#c5dfff",
+                        "inverse-surface": "#000f1f",
+                        "on-tertiary-container": "#630040",
+                        "on-primary": "#e9f4ff",
+                        "secondary-dim": "#005672",
+                        "inverse-on-surface": "#81a0c2",
+                        "surface-container-low": "#e9f1ff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#003954",
+                        "on-surface-variant": "#3f5e7d",
+                        "secondary-container": "#93dbff",
+                        "on-error-container": "#570008",
+                        "on-secondary-fixed-variant": "#005773",
+                        "primary": "#00628c",
+                        "on-error": "#ffefee",
+                        "surface-container-high": "#cfe5ff",
+                        "on-tertiary-fixed": "#360021",
+                        "tertiary-fixed": "#ff8bc5",
+                        "on-primary-container": "#003047",
+                        "outline": "#5b799a",
+                        "surface-tint": "#00628c",
+                        "secondary-fixed-dim": "#78cef7",
+                        "surface-variant": "#c5dfff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans", "Noto Sans SC"],
+                        "body": ["Plus Jakarta Sans", "Noto Sans SC"],
+                        "label": ["Plus Jakarta Sans", "Noto Sans SC"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif;
+        }
+
+        .glass-panel {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .no-line-rule {
+            border: none !important;
+        }
+
+        .tonal-layering {
+            background-color: var(--tw-surface-container-lowest);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface selection:bg-primary-container selection:text-on-primary-container">
+    <!-- TopNavBar -->
+    <nav class="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl shadow-xl shadow-sky-900/5 h-20">
+        <div class="flex justify-between items-center px-8 h-full max-w-7xl mx-auto">
+            <div class="text-2xl font-bold tracking-tighter text-sky-800">蔚蓝清风</div>
+            <div class="hidden md:flex items-center space-x-8 font-medium tracking-wide text-sm">
+                <a class="text-slate-500 hover:text-sky-500 transition-colors" href="#">首页</a>
+                <a class="text-sky-600 font-bold border-b-2 border-sky-500" href="#">文章</a>
+                <a class="text-slate-500 hover:text-sky-500 transition-colors" href="#">留言板</a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button
+                    class="p-2 text-sky-700 hover:bg-sky-50/50 rounded-full transition-all duration-300 scale-95 active:scale-90">
+                    <span class="material-symbols-outlined" data-icon="dark_mode">dark_mode</span>
+                </button>
+                <button
+                    class="p-2 text-sky-700 hover:bg-sky-50/50 rounded-full transition-all duration-300 scale-95 active:scale-90">
+                    <span class="material-symbols-outlined" data-icon="search">search</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <div class="flex max-w-7xl mx-auto pt-24 px-4 min-h-screen">
+        <!-- SideNavBar -->
+        <aside
+            class="hidden lg:flex flex-col w-64 p-6 space-y-4 bg-sky-50/50 backdrop-blur-lg rounded-r-[3rem] h-[calc(100vh-8rem)] sticky top-24 shadow-2xl shadow-sky-900/10">
+            <div class="flex items-center space-x-3 px-2 mb-6">
+                <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-primary-container">
+                    <img class="w-full h-full object-cover"
+                        data-alt="close-up portrait of a cheerful young creator with glasses in a bright sunlit studio environment"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfX0dIsp-3nlUb11swCpjLEniHzPuPrkQEJgwdT6QK620d74sI1SDILawuWrx-SH_wTXzU-822ZSogXJlUEst_1YbaSuRjdNBW3Kh8EzroRUXk0BRL5kvatTnUmAbmEtZLbaBrGr04W6K_lYbWKkI9LzkUkJ2GClnY_TWR29GlFTd_smOFck6yEZsvq_-0wVC6IieX34UWCz2FrQlJDXYQMXqghEKy_6ze-eh07eemQtQy8OQBr_gCTDqzC4WKYI0VGg1yHnDUp9Y" />
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-sky-900 leading-tight">Azure Curator</h3>
+                    <p class="text-xs text-slate-500">保持好奇与热爱</p>
+                </div>
+            </div>
+            <div class="space-y-2 flex-grow">
+                <a class="flex items-center space-x-3 px-4 py-3 text-slate-600 hover:bg-sky-100/50 rounded-full hover:translate-x-1 transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="category">category</span>
+                    <span class="text-sm">分类</span>
+                </a>
+                <a class="flex items-center space-x-3 px-4 py-3 bg-sky-500 text-white rounded-full shadow-lg shadow-sky-200"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+                    <span class="text-sm">文学</span>
+                </a>
+                <a class="flex items-center space-x-3 px-4 py-3 text-slate-600 hover:bg-sky-100/50 rounded-full hover:translate-x-1 transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+                    <span class="text-sm">哲学</span>
+                </a>
+                <a class="flex items-center space-x-3 px-4 py-3 text-slate-600 hover:bg-sky-100/50 rounded-full hover:translate-x-1 transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+                    <span class="text-sm">技术</span>
+                </a>
+                <a class="flex items-center space-x-3 px-4 py-3 text-slate-600 hover:bg-sky-100/50 rounded-full hover:translate-x-1 transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+                    <span class="text-sm">存档</span>
+                </a>
+            </div>
+            <div class="pt-6 border-t border-sky-100">
+                <a class="flex items-center space-x-3 px-4 py-3 text-slate-600 hover:bg-sky-100/50 rounded-full hover:translate-x-1 transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="person">person</span>
+                    <span class="text-sm">个人中心</span>
+                </a>
+            </div>
+        </aside>
+        <!-- Main Content (Article Detail) -->
+        <main class="flex-1 lg:ml-8 mb-20">
+            <!-- Article Header Card -->
+            <div class="relative w-full rounded-xl overflow-hidden mb-8 shadow-2xl shadow-sky-900/10">
+                <div class="absolute inset-0 bg-gradient-to-t from-sky-900/80 to-transparent z-10"></div>
+                <img class="w-full h-[400px] object-cover"
+                    data-alt="panoramic landscape of misty blue mountains at dawn with soft ethereal lighting and calm atmosphere"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2eEPMjYFzJZCWIzoiQh3p0PngiWfaMFJlXh9RIh0bghA1GLhSIsw84IAWutwMbyn8pjTAe94xa0MLuaDVc83g47TqjN73ZbqS4Sb81V_MuO8f8X0gJHTOhQ5lh3tnDIwskekoON-5bDjaKq4gEPSDF7Qmaqzl4w34tlM8pI-27B1jMdqnInGv4mjTHwXvs6Mv86HK4F64g5zq4nhkDiKKbF9VmffZjBffixN1T6Zt2L_3o0pgY1JLPtM5O3Mv-_6J8NpxiLuaXKM" />
+                <div class="absolute bottom-0 left-0 p-8 lg:p-12 z-20 w-full">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <span
+                            class="px-4 py-1 bg-tertiary-container text-on-tertiary-container text-xs font-bold rounded-full uppercase tracking-wider">数字哲学</span>
+                        <span class="text-white/80 text-sm font-medium">阅读时间 · 12 分钟</span>
+                    </div>
+                    <h1 class="text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight max-w-4xl">
+                        蔚蓝清风：如何在喧嚣的数字时代保持一颗宁静的心
+                    </h1>
+                    <div class="flex flex-wrap items-center justify-between gap-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-10 h-10 rounded-full border-2 border-white/50 overflow-hidden">
+                                <img class="w-full h-full object-cover"
+                                    data-alt="professional headshot of a writer looking thoughtfully at the camera with a soft teal background"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFLrYvOvlm4Te14qg6_Cm7DrcvS9gkZ4u4nRGt5qHAnOOSvy9LYnsC2YSdtG2LanKO74dsRd3lR_vpuK2xjKh-1o6FVWq5IEjA8YIltyqqICm1U7F63DxbOKu3qUW4u-dcTOnNghyN4DTmIEU5i9_IAaO2JI7cUiLVQPcbLfyUpir6gB4xSHfW6P-x1D7LETWf1jB2M4kBqzzFiDV1zl3nm1jbb4FyBv9dHUE6P9vBlJaCZySSwdIJceugSr1QIanF8IOm_wijnig" />
+                            </div>
+                            <div class="text-white">
+                                <p class="text-sm font-bold">Azure Curator</p>
+                                <p class="text-xs text-white/70">发布于 2024年5月20日</p>
+                            </div>
+                        </div>
+                        <!-- Admin Controls -->
+                        <div class="flex items-center space-x-3">
+                            <button
+                                class="flex items-center space-x-2 px-5 py-2 bg-white/20 backdrop-blur-md hover:bg-white/30 text-white text-sm font-bold rounded-full transition-all duration-300 active:scale-95">
+                                <span class="material-symbols-outlined text-sm" data-icon="edit">edit</span>
+                                <span>编辑文章</span>
+                            </button>
+                            <button
+                                class="flex items-center space-x-2 px-5 py-2 bg-error/80 backdrop-blur-md hover:bg-error text-white text-sm font-bold rounded-full transition-all duration-300 active:scale-95">
+                                <span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+                                <span>删除</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Reading Body -->
+            <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
+                <div class="xl:col-span-3">
+                    <div class="bg-surface-container-lowest rounded-xl p-8 lg:p-12 shadow-sm">
+                        <article
+                            class="prose prose-sky max-w-none text-on-surface-variant leading-relaxed text-lg space-y-8">
+                            <p class="font-medium text-xl text-primary leading-relaxed">
+                                在这个信息爆炸的时代，我们的注意力被无数碎片化的通知和算法精心编织的推荐所瓜分。作为一名数字策展人，我一直在思考，如何才能在这样清脆而嘈杂的数字背景音中，寻找那一抹如清风般自在的宁静。
+                            </p>
+                            <h2 class="text-2xl font-bold text-sky-900 mt-12 mb-4 flex items-center">
+                                <span class="w-2 h-8 bg-primary-container rounded-full mr-4"></span>
+                                极简主义的数字重构
+                            </h2>
+                            <p>
+                                我们习惯了“增加”——增加关注、增加应用、增加设备。然而，真正的自由往往来源于“剔除”。通过对我们日常接触的信息流进行一次彻底的审计，你会发现，超过 80%
+                                的信息其实对你的成长和幸福毫无裨益。
+                            </p>
+                            <div
+                                class="my-10 rounded-xl overflow-hidden border-l-4 border-primary-container bg-surface-container-low p-8">
+                                <p class="italic text-sky-800 text-xl font-medium">
+                                    “美感并非堆砌的结果，而是当所有多余之物被剥离后，留下的那份最纯粹的本质。”
+                                </p>
+                            </div>
+                            <p>
+                                蔚蓝清风的设计系统正源于此。它不依赖厚重的阴影或生硬的线条，而是通过光影、留白与柔和的色彩过渡，模拟自然界中空气与水的流动感。当我们身处这样的视觉环境中，心率会不自觉地放缓，大脑也会进入一种更为深度、专注的阅读状态。
+                            </p>
+                            <h2 class="text-2xl font-bold text-sky-900 mt-12 mb-4 flex items-center">
+                                <span class="w-2 h-8 bg-tertiary-container rounded-full mr-4"></span>
+                                建立你的呼吸空间
+                            </h2>
+                            <p>
+                                无论是在现实生活中，还是在屏幕后的数字空间，我们都需要一个可以“呼吸”的容器。这不仅意味着物理上的空旷，更意味着心理上的从容。在这篇文章中，我想分享三个实用的技巧，帮助你重建这种秩序感：
+                            </p>
+                            <ul class="list-none space-y-4 my-8">
+                                <li class="flex items-start space-x-3">
+                                    <span class="material-symbols-outlined text-primary"
+                                        data-icon="check_circle">check_circle</span>
+                                    <span><strong>视觉去噪：</strong> 关闭非必要应用的横幅通知，让屏幕回归纯净。</span>
+                                </li>
+                                <li class="flex items-start space-x-3">
+                                    <span class="material-symbols-outlined text-primary"
+                                        data-icon="check_circle">check_circle</span>
+                                    <span><strong>定期离线：</strong> 每天设置一小时的“无电模式”，去感受真实的微风。</span>
+                                </li>
+                                <li class="flex items-start space-x-3">
+                                    <span class="material-symbols-outlined text-primary"
+                                        data-icon="check_circle">check_circle</span>
+                                    <span><strong>高质量输入：</strong> 像策划一场展览一样挑选你的阅读列表。</span>
+                                </li>
+                            </ul>
+                            <img class="w-full rounded-lg shadow-lg my-12"
+                                data-alt="minimalist workspace with a single laptop on a light wood desk next to a tall window with soft curtains and a potted plant"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDw9DmboW4eFHqtZLNNSrjUxOT5BTO1PndnP2jPANrqu5NJSaK6Zk_pmzaz7gRmzFy9qPyblnLJd3avouAxjbQNYAS6geTLeZN3bXEhIuMWuE3ny1TsXrM3muEOVdR9WMKkeCebE4ZPlI7oBMQN85WqqxBrZclCXtGY7CYeik1178uvT6jnrGtGTjj5MbQpM2an4f7OTVMD1ytA8Kw-yE7ZLwkwFe1uTwMcSHSkZU5PXSHHXFQPSPMPGbH-I-VZBkOLCYi4yWXkfjE" />
+                            <p>
+                                最后，不要忘记保持那份最宝贵的好奇。好奇心是推动我们不断探索的动力，而热爱则是支撑我们在这条路上走得更远的灯塔。蔚蓝清风不仅是一个视觉系统，更是一种对待生活的态度：轻盈、通透、且永远向前。
+                            </p>
+                        </article>
+                        <!-- Social Share -->
+                        <div class="mt-16 pt-8 border-t border-sky-50 flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <button
+                                    class="flex items-center space-x-2 px-4 py-2 bg-sky-50 text-sky-600 rounded-full hover:bg-sky-100 transition-colors">
+                                    <span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+                                    <span class="text-sm font-bold">1.2k</span>
+                                </button>
+                                <button
+                                    class="flex items-center space-x-2 px-4 py-2 bg-sky-50 text-sky-600 rounded-full hover:bg-sky-100 transition-colors">
+                                    <span class="material-symbols-outlined" data-icon="mode_comment">mode_comment</span>
+                                    <span class="text-sm font-bold">85</span>
+                                </button>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button class="p-2 text-slate-400 hover:text-sky-500 transition-colors">
+                                    <span class="material-symbols-outlined" data-icon="share">share</span>
+                                </button>
+                                <button class="p-2 text-slate-400 hover:text-sky-500 transition-colors">
+                                    <span class="material-symbols-outlined" data-icon="bookmark">bookmark</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Sidebar Widgets -->
+                <div class="space-y-8">
+                    <!-- Table of Contents -->
+                    <div class="bg-surface-container-low rounded-xl p-6 shadow-sm">
+                        <h4 class="text-xs font-bold text-sky-800 uppercase tracking-widest mb-4">文章目录</h4>
+                        <nav class="space-y-3">
+                            <a class="block text-sm text-sky-600 font-bold border-l-2 border-sky-500 pl-4"
+                                href="#">极简主义的数字重构</a>
+                            <a class="block text-sm text-slate-500 hover:text-sky-500 pl-4 transition-colors"
+                                href="#">建立你的呼吸空间</a>
+                            <a class="block text-sm text-slate-500 hover:text-sky-500 pl-4 transition-colors"
+                                href="#">结语：保持热爱</a>
+                        </nav>
+                    </div>
+                    <!-- Recommended Posts (Bento Style) -->
+                    <div class="bg-surface-container-low rounded-xl p-6 shadow-sm">
+                        <h4 class="text-xs font-bold text-sky-800 uppercase tracking-widest mb-4">相关阅读</h4>
+                        <div class="space-y-4">
+                            <div class="group cursor-pointer">
+                                <div class="rounded-lg overflow-hidden mb-2 h-32 relative">
+                                    <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        data-alt="macro photograph of water droplets on a blue glass surface with soft bokeh background"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAisnJxKP1YvsSJMDLCKCjQy6B1XCOt6DzijWtxkUKhtGCEgeqTEaTKw5D0x9Q4TQOTCp4lgNL71lVXDy_qC3kImjvEhX328JdXBgunPLp7NqxyyvK5ycsG-h_py6ZBPJ7vlSy3tu4eABojuX-Rb_Ybo9IuRN46Wq6bh6oExCWoSs8d6LF9Ycz9AlVPnXYSAnhrTQFg9mbOzDrsDRmqu_oYE_z7HXdDaHpS4m9rg0JngVP4pKypMJgXPBnzlovQXxrtYy3hwG-nE5Y" />
+                                </div>
+                                <h5 class="text-sm font-bold text-sky-900 group-hover:text-primary transition-colors">
+                                    探索数字极简的 10 个工具</h5>
+                            </div>
+                            <div class="group cursor-pointer">
+                                <div class="rounded-lg overflow-hidden mb-2 h-32 relative">
+                                    <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        data-alt="abstract flowing silk in shades of turquoise and deep sea blue with soft studio lighting"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5qCmt_ZFNVuJNSRUy8zgo1pYxsYe1H17kDKqocGnSb0E7kq3HGaYGo7N4rwrgjSbwWEfSOwupIcZnK6cR5a15tgouyA7gBKE2XPohuhAzs3mEvC4MhMWpZo5GPEQOl-0qfl3HgP9m0zjphGQECr2qztuNAlP-9vapwp4mBQKZhkDWaXk5uZOfwRdWQW5f2sQKepsYUQUT77o7shcW2Pa9aNPefts3jdHW9VeJnYgbH9oLWkQrxUTri2Lm3xeNMY3sz2_yjTZ2-MM" />
+                                </div>
+                                <h5 class="text-sm font-bold text-sky-900 group-hover:text-primary transition-colors">
+                                    美学与逻辑：设计的平衡点</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- Footer -->
+    <footer class="bg-white rounded-t-[3rem] mt-20 w-full py-12 px-8 flex flex-col items-center gap-4">
+        <div class="flex items-center space-x-6 mb-4">
+            <a class="text-slate-400 hover:text-sky-400 font-plus-jakarta text-xs uppercase tracking-widest opacity-80 hover:opacity-100 transition-opacity underline decoration-sky-300 underline-offset-4"
+                href="#">隐私政策</a>
+            <a class="text-slate-400 hover:text-sky-400 font-plus-jakarta text-xs uppercase tracking-widest opacity-80 hover:opacity-100 transition-opacity underline decoration-sky-300 underline-offset-4"
+                href="#">关于我</a>
+            <a class="text-slate-400 hover:text-sky-400 font-plus-jakarta text-xs uppercase tracking-widest opacity-80 hover:opacity-100 transition-opacity underline decoration-sky-300 underline-offset-4"
+                href="#">联系支持</a>
+        </div>
+        <p class="text-slate-400 font-plus-jakarta text-xs uppercase tracking-widest opacity-80">
+            © 2024 蔚蓝清风 | 保持好奇与热爱
+        </p>
+    </footer>
+</body>
+
+</html>

@@ -1,0 +1,57 @@
+# ===== OS / Editor =====
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+
+.idea/
+
+# Cursor local state (not project source)
+.cursor/
+
+# ===== Logs =====
+*.log
+logs/
+
+# ===== Environment files =====
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# ===== Node / JS =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vite / build outputs
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# ===== Backend runtime data (SQLite + uploads) =====
+serve/data/
+
+# If you ever decide to commit seeded DB, narrow this ignore.
+# For now, ignore all generated sqlite files.
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Uploads are runtime artifacts
+uploads/
+/serve/data/uploads/
+
+# ===== Misc =====
+coverage/
+.cache/
+tmp/
+temp/
+

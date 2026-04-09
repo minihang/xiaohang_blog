@@ -1,0 +1,376 @@
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#f976ba",
+                        "secondary": "#006382",
+                        "tertiary": "#a02d70",
+                        "on-primary-fixed": "#00121e",
+                        "secondary-fixed": "#93dbff",
+                        "on-secondary": "#e5f5ff",
+                        "tertiary-dim": "#912063",
+                        "surface-bright": "#f3f7ff",
+                        "primary-container": "#34b5fa",
+                        "error-dim": "#9f0519",
+                        "on-secondary-fixed": "#00394c",
+                        "primary-fixed": "#34b5fa",
+                        "primary-fixed-dim": "#17a8ec",
+                        "on-surface": "#0c314e",
+                        "on-tertiary-fixed-variant": "#73004b",
+                        "on-tertiary": "#ffeff3",
+                        "inverse-primary": "#34b5fa",
+                        "surface": "#f3f7ff",
+                        "surface-dim": "#b5d8ff",
+                        "error-container": "#fb5151",
+                        "background": "#f3f7ff",
+                        "outline-variant": "#91b0d3",
+                        "surface-container-highest": "#c5dfff",
+                        "inverse-surface": "#000f1f",
+                        "on-tertiary-container": "#630040",
+                        "on-primary": "#e9f4ff",
+                        "secondary-dim": "#005672",
+                        "inverse-on-surface": "#81a0c2",
+                        "surface-container-low": "#e9f1ff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#003954",
+                        "on-surface-variant": "#3f5e7d",
+                        "secondary-container": "#93dbff",
+                        "on-error-container": "#570008",
+                        "on-secondary-fixed-variant": "#005773",
+                        "primary": "#00628c",
+                        "on-error": "#ffefee",
+                        "surface-container-high": "#cfe5ff",
+                        "on-tertiary-fixed": "#360021",
+                        "tertiary-fixed": "#ff8bc5",
+                        "on-primary-container": "#003047",
+                        "outline": "#5b799a",
+                        "surface-tint": "#00628c",
+                        "secondary-fixed-dim": "#78cef7",
+                        "surface-variant": "#c5dfff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans", "PingFang SC", "sans-serif"],
+                        "body": ["Plus Jakarta Sans", "PingFang SC", "sans-serif"],
+                        "label": ["Plus Jakarta Sans", "PingFang SC", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', 'PingFang SC', sans-serif;
+        }
+
+        .glass-effect {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface">
+    <!-- TopNavBar -->
+    <nav class="fixed top-0 w-full z-50 bg-white/70 dark:bg-sky-950/70 backdrop-blur-xl shadow-xl shadow-sky-900/5">
+        <div class="flex justify-between items-center px-8 h-20 max-w-7xl mx-auto">
+            <div class="text-2xl font-bold tracking-tighter text-sky-800 dark:text-sky-100">蔚蓝清风</div>
+            <div class="hidden md:flex items-center space-x-8 font-plus-jakarta text-sm font-medium tracking-wide">
+                <a class="text-slate-500 dark:text-slate-400 hover:text-sky-500 transition-colors" href="#">首页</a>
+                <a class="text-slate-500 dark:text-slate-400 hover:text-sky-500 transition-colors" href="#">文章</a>
+                <a class="text-sky-600 dark:text-sky-400 font-bold border-b-2 border-sky-500" href="#">留言板</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <button
+                    class="p-2 rounded-full hover:bg-sky-50/50 dark:hover:bg-sky-900/30 transition-all duration-300 scale-95 active:scale-90">
+                    <span class="material-symbols-outlined text-sky-700 dark:text-sky-300"
+                        data-icon="dark_mode">dark_mode</span>
+                </button>
+                <button
+                    class="p-2 rounded-full hover:bg-sky-50/50 dark:hover:bg-sky-900/30 transition-all duration-300 scale-95 active:scale-90">
+                    <span class="material-symbols-outlined text-sky-700 dark:text-sky-300"
+                        data-icon="search">search</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <div class="flex pt-24 min-h-screen max-w-[1600px] mx-auto">
+        <!-- SideNavBar -->
+        <aside
+            class="hidden lg:flex flex-col w-64 p-6 space-y-4 bg-sky-50/50 dark:bg-slate-900/50 backdrop-blur-lg rounded-r-[3rem] h-[calc(100vh-8rem)] sticky top-28 shadow-2xl shadow-sky-900/10 transition-transform duration-300">
+            <div class="flex flex-col items-center mb-6">
+                <div class="w-16 h-16 rounded-full overflow-hidden mb-3 border-2 border-white shadow-md">
+                    <img alt="Blogger Profile Avatar" class="w-full h-full object-cover"
+                        data-alt="close-up portrait of a friendly smiling young man with light brown hair and casual blue shirt in soft natural lighting"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQXzbnJjQj-2wcO20x4QTClKRM3ojswaOQCQ72Z95CD3GWPEMD9-N6PWK4a6J9WiDaZ8WoYbLhC4lM0NiAtwwG2nSBCoC2t7S0dgc2GrmFUNfO8fm1ui_dcmoGo5DiAKfq-2pelDuTgYuDiORpacHEHrvAnXlO7e0qHKb_9uSa2QBXYPIui2MEI_niEIJe6ghYjpFUyaYoq6O1zxC8R9fGEZ9LE4ekyIQY6LIrTn6RpfjgSfp5qh480rIzoLA1cWkhpAxHqYEc7-M" />
+                </div>
+                <h3 class="text-lg font-bold text-sky-900 dark:text-sky-100">Azure Curator</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">保持好奇与热爱</p>
+            </div>
+            <div class="space-y-2 font-plus-jakarta text-sm">
+                <a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-sky-100/50 dark:hover:bg-sky-800/30 rounded-full hover:translate-x-1 transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined text-sky-600 dark:text-sky-400"
+                        data-icon="category">category</span>
+                    <span>分类</span>
+                </a>
+                <a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-sky-100/50 dark:hover:bg-sky-800/30 rounded-full hover:translate-x-1 transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined text-sky-600 dark:text-sky-400"
+                        data-icon="auto_stories">auto_stories</span>
+                    <span>文学</span>
+                </a>
+                <a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-sky-100/50 dark:hover:bg-sky-800/30 rounded-full hover:translate-x-1 transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined text-sky-600 dark:text-sky-400"
+                        data-icon="psychology">psychology</span>
+                    <span>哲学</span>
+                </a>
+                <a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-sky-100/50 dark:hover:bg-sky-800/30 rounded-full hover:translate-x-1 transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined text-sky-600 dark:text-sky-400"
+                        data-icon="terminal">terminal</span>
+                    <span>技术</span>
+                </a>
+                <a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-sky-100/50 dark:hover:bg-sky-800/30 rounded-full hover:translate-x-1 transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined text-sky-600 dark:text-sky-400"
+                        data-icon="inventory_2">inventory_2</span>
+                    <span>存档</span>
+                </a>
+            </div>
+            <div class="mt-auto pt-6 border-t border-sky-100 dark:border-sky-800">
+                <a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-sky-100/50 dark:hover:bg-sky-800/30 rounded-full hover:translate-x-1 transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined text-sky-600 dark:text-sky-400"
+                        data-icon="person">person</span>
+                    <span>个人中心</span>
+                </a>
+            </div>
+        </aside>
+        <!-- Main Canvas -->
+        <main class="flex-1 px-4 md:px-12 pb-20 overflow-x-hidden">
+            <!-- Header Section -->
+            <section class="mb-12 text-center md:text-left mt-8">
+                <h1 class="text-5xl font-extrabold tracking-tight text-primary mb-4">留言板</h1>
+                <p class="text-lg text-on-surface-variant max-w-2xl leading-relaxed">
+                    这里是一个自由呼吸的角落。留下你的足迹，分享你的故事，或者仅仅是一句简单的问候。
+                </p>
+            </section>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <!-- Message Submission Form (Bento Style) -->
+                <div class="lg:col-span-5 bg-surface-container-low rounded-xl p-8 shadow-sm h-fit sticky top-28">
+                    <div class="flex items-center gap-3 mb-6">
+                        <span class="material-symbols-outlined text-tertiary text-3xl"
+                            data-icon="edit_note">edit_note</span>
+                        <h2 class="text-2xl font-bold text-on-surface">撰写新留言</h2>
+                    </div>
+                    <form class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-on-surface-variant mb-2 px-1">你的昵称</label>
+                            <input
+                                class="w-full bg-surface-container-high border-none rounded-2xl py-4 px-6 focus:ring-2 focus:ring-primary-container text-on-surface placeholder-outline-variant transition-all duration-300"
+                                placeholder="怎么称呼你？" type="text" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-on-surface-variant mb-2 px-1">留言内容</label>
+                            <textarea
+                                class="w-full bg-surface-container-high border-none rounded-2xl py-4 px-6 focus:ring-2 focus:ring-primary-container text-on-surface placeholder-outline-variant transition-all duration-300 resize-none"
+                                placeholder="此刻在想什么..." rows="5"></textarea>
+                        </div>
+                        <button
+                            class="w-full bg-gradient-to-r from-primary to-primary-container text-white font-bold py-4 rounded-full shadow-lg shadow-sky-200 dark:shadow-none hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined" data-icon="send">send</span>
+                            发送留言
+                        </button>
+                        <p class="text-center text-xs text-outline-variant">请友善发言，维护社区环境</p>
+                    </form>
+                </div>
+                <!-- Message Wall (Masonry-like Layout) -->
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-on-surface-variant flex items-center gap-2">
+                            <span class="material-symbols-outlined text-secondary" data-icon="forum">forum</span>
+                            最新动态 (42)
+                        </h3>
+                        <div class="flex gap-2">
+                            <span
+                                class="bg-tertiary-container/20 text-tertiary px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">全部留言</span>
+                        </div>
+                    </div>
+                    <!-- Message Card 1: Admin View -->
+                    <div
+                        class="group relative bg-surface-container-lowest rounded-xl p-6 shadow-xl shadow-sky-900/5 border border-sky-50 dark:border-sky-900/10 transition-all duration-400 hover:translate-y-[-4px]">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                                <img alt="User Avatar" class="w-full h-full object-cover"
+                                    data-alt="portrait of a cheerful woman with long dark hair and a warm smile outdoors in soft daylight"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhk6-C0V9cVM8Fs_v-K64DuB6kIFdMVqNUqDPBdvfD8KhU5i__EryojOts7DLGEPyg7TyQMsdt20X9K5Cb6Ey3YHV63IdMylfibqs0cBD2cWsyhz9hX2KLJm14-rovVkIweI3uouVAstrwxt4gu4r2AxysbAqxxeLuM2mOcpd4_9lYGgOqlXdrCzrYsCwO7sIkfTTtIB9SwLXesyz7cKrOp5IdgNno34xSRc5voVLQqdVzzbzVV3RPYUL_2Z9fSdZukXSc9-TiBxI" />
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-sky-800 dark:text-sky-300">夏日的苏打水</span>
+                                    <span class="text-xs text-outline-variant">10 分钟前</span>
+                                </div>
+                                <p class="text-on-surface-variant leading-relaxed">
+                                    真的很喜欢你写的关于《数字极简主义》的那篇文章！最近也在尝试断舍离，感觉生活质量提高了不少。加油，会一直关注你的！✨
+                                </p>
+                                <!-- Admin Actions -->
+                                <div
+                                    class="mt-4 flex gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <button
+                                        class="flex items-center gap-1 text-xs font-bold text-error hover:bg-error-container/10 px-3 py-1.5 rounded-full transition-colors">
+                                        <span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+                                        删除
+                                    </button>
+                                    <button
+                                        class="flex items-center gap-1 text-xs font-bold text-secondary hover:bg-secondary-container/10 px-3 py-1.5 rounded-full transition-colors">
+                                        <span class="material-symbols-outlined text-sm" data-icon="reply">reply</span>
+                                        回复
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Message Card 2: Featured -->
+                    <div
+                        class="bg-gradient-to-br from-secondary-container/20 to-primary-container/10 rounded-xl p-6 border border-primary-container/20">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                                <img alt="User Avatar" class="w-full h-full object-cover"
+                                    data-alt="professional portrait of a young man with glasses and a thoughtful expression, warm indoor lighting"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFDEgThscG2kXVovhR4CpekkKgRhvBq0Oem0E3H3jKfQsKLmF-Agt1IGpGBFS7pLc8UaggwoY-j1SbML06zoBH-CY8t7vmqk9hjiZ1LN7RwkdwevS3tiyJITNOxOQbW0ohPb0WKHceYf1MJX7CLdZwVUlzpqGg5HktQbkR3oG8iTRFvhfeuSgrUV9Rc5MHRCegpy-YAF8R3javxpFrlIYKL9SGtlTQki_gW-ICiKPImlJoZXEsHAV-ySrMj4v4o_wyzEe0Ywj4V_M" />
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-center mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-sky-900">暮光收藏家</span>
+                                        <span
+                                            class="bg-primary text-on-primary text-[10px] px-2 py-0.5 rounded-full font-bold">精选</span>
+                                    </div>
+                                    <span class="text-xs text-outline-variant">1 小时前</span>
+                                </div>
+                                <p class="text-on-surface leading-relaxed">
+                                    博主的配色方案真的太治愈了，每次来这里都感觉心情像被清风吹过一样。留言板的设计也很赞，这种圆角气泡感非常有亲和力。🌊
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Message Card 3 -->
+                    <div
+                        class="bg-surface-container-lowest rounded-xl p-6 shadow-xl shadow-sky-900/5 border border-sky-50 transition-all duration-400">
+                        <div class="flex items-start gap-4">
+                            <div
+                                class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-tertiary-container flex items-center justify-center">
+                                <span class="text-white font-bold text-xl">L</span>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-sky-800">Liam_Dev</span>
+                                    <span class="text-xs text-outline-variant">昨天</span>
+                                </div>
+                                <p class="text-on-surface-variant leading-relaxed">
+                                    期待更多关于前端技术的分享，希望能看到你对最近那个新框架的看法。
+                                </p>
+                                <!-- Reply Context -->
+                                <div class="mt-4 pl-4 border-l-2 border-primary-container/30">
+                                    <p class="text-xs text-primary font-bold mb-1">Azure Curator 回复：</p>
+                                    <p class="text-sm text-on-surface-variant italic">正在爆肝中，下周应该就能更新相关文章了，敬请期待！</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Message Card 4 -->
+                    <div
+                        class="bg-surface-container-lowest rounded-xl p-6 shadow-xl shadow-sky-900/5 border border-sky-50 transition-all duration-400">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                                <img alt="User Avatar" class="w-full h-full object-cover"
+                                    data-alt="close-up of a stylish man with a short beard in a minimalist gray sweater, blurred urban background"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4FUXG79W8bi7Eb0yjXALYiwEDzIBqqKuIetsEWUGSYJu3xL64-wMUmV6xKSlExxZ1kaNDukhwxJTz3kzy8Bnef_nhTqCdYyoJU2j0c7wR0-HGfklbQ08fOxRmRvn3MLz1TRVPnSNL3TcFSqsK2C6DFNFJ6HqJwm0O03bv4ZmEglTq1TJQyG8RIity0kOSuPhXJxRf3Q4akDOWBP-081WC_oBXY2sC7u5JfSXiZHITfo6bLlIZ8ogRLvw_KNugyczfnEl4h2svXcY" />
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-sky-800">林间漫步</span>
+                                    <span class="text-xs text-outline-variant">3 天前</span>
+                                </div>
+                                <p class="text-on-surface-variant leading-relaxed">
+                                    偶然发现这个宝藏博客，不管是排版还是内容都深得我心。留个脚印，以后常来！🍂
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Load More -->
+                    <button class="w-full py-6 flex flex-col items-center gap-2 group">
+                        <span class="text-sm font-bold text-outline hover:text-primary transition-colors">展开更多留言</span>
+                        <span
+                            class="material-symbols-outlined text-outline group-hover:translate-y-1 transition-transform"
+                            data-icon="keyboard_double_arrow_down">keyboard_double_arrow_down</span>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- Footer -->
+    <footer
+        class="w-full py-12 px-8 flex flex-col items-center gap-4 bg-white dark:bg-slate-950 rounded-t-[3rem] mt-20 tonal-layering">
+        <div class="flex flex-wrap justify-center gap-8 mb-4">
+            <a class="text-slate-400 hover:text-sky-400 font-plus-jakarta text-xs uppercase tracking-widest transition-all duration-300 underline decoration-sky-300 underline-offset-4"
+                href="#">隐私政策</a>
+            <a class="text-slate-400 hover:text-sky-400 font-plus-jakarta text-xs uppercase tracking-widest transition-all duration-300 underline decoration-sky-300 underline-offset-4"
+                href="#">关于我</a>
+            <a class="text-slate-400 hover:text-sky-400 font-plus-jakarta text-xs uppercase tracking-widest transition-all duration-300 underline decoration-sky-300 underline-offset-4"
+                href="#">联系支持</a>
+        </div>
+        <div
+            class="text-slate-400 text-xs font-plus-jakarta tracking-widest uppercase text-center opacity-80 hover:opacity-100 transition-opacity">
+            © 2024 蔚蓝清风 | 保持好奇与热爱
+        </div>
+        <!-- Social Floating Group -->
+        <div class="mt-4 flex gap-6">
+            <span class="material-symbols-outlined text-sky-300 cursor-pointer hover:scale-110 transition-transform"
+                data-icon="alternate_email">alternate_email</span>
+            <span class="material-symbols-outlined text-sky-300 cursor-pointer hover:scale-110 transition-transform"
+                data-icon="hub">hub</span>
+            <span class="material-symbols-outlined text-sky-300 cursor-pointer hover:scale-110 transition-transform"
+                data-icon="rss_feed">rss_feed</span>
+        </div>
+    </footer>
+    <!-- FAB (Contextual for creating message) -->
+    <div class="fixed bottom-8 right-8 lg:hidden">
+        <button
+            class="w-16 h-16 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center scale-100 active:scale-90 transition-transform duration-300">
+            <span class="material-symbols-outlined" data-icon="add_comment">add_comment</span>
+        </button>
+    </div>
+
+    ```
+</body>
+
+</html>

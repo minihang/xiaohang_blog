@@ -1,0 +1,28 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start Both Servers",
+            "dependsOn": [
+                "Start serve",
+                "Start front"
+            ],
+            "dependsOrder": "parallel",
+            "problemMatcher": []
+        },
+        {
+            "label": "Start serve",
+            "type": "shell",
+            "command": "cd serve && npm run dev",
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Start front",
+            "type": "shell",
+            "command": "cd front && npm run dev",
+            "isBackground": true,
+            "problemMatcher": []
+        }
+    ]
+}
