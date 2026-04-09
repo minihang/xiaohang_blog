@@ -3,7 +3,6 @@ import bcrypt from 'bcryptjs'
 import { db } from '../db.js'
 import { signToken } from '../middleware/auth.js'
 import { rowToUser } from '../util/userDto.js'
-import { PRODUCTION_ADMIN_USERNAME } from '../seed.js'
 
 const router = Router()
 
@@ -25,7 +24,7 @@ router.post('/register', (req, res) => {
   if (password.length < 4) {
     return res.status(400).json({ error: '密码至少 4 位' })
   }
-  if (username.toLowerCase() === 'admin' || username === PRODUCTION_ADMIN_USERNAME) {
+  if (username.toLowerCase() === 'admin') {
     return res.status(400).json({ error: '该用户名不可用' })
   }
 

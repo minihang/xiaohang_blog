@@ -6,39 +6,32 @@ import { dicebearAvatar } from './util/avatar.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-/** 线上管理员登录名（与注册接口保留名一致） */
-export const PRODUCTION_ADMIN_USERNAME = '410327200401290010'
-const PRODUCTION_ADMIN_PASSWORD = 'qwerdf1234123'
+const ADMIN_USERNAME = 'admin'
+const ADMIN_PASSWORD = '123456'
 
-/** 移除旧版演示账号 admin（与角色 admin 无关；留言等外键会置空） */
-export function removeLegacyAdminUser() {
-  const r = db.prepare(`DELETE FROM users WHERE LOWER(username) = 'admin'`).run()
-  if (r.changes > 0) {
-    console.log('[seed] 已删除遗留用户 admin')
-  }
+export function removeAllAdminUsers() {
+  const r = db.prepare(`DELETE FROM users WHERE role = 'admin'`).run()
+  if (r.changes > 0) console.log('[seed] 已删除管理员账号数量:', r.changes)
 }
 
-/** 若库中尚无该管理员则插入（已有数据的数据库也会补全） */
-export function ensureProductionAdmin() {
-  const exists = db
-    .prepare('SELECT 1 FROM users WHERE username = ?')
-    .get(PRODUCTION_ADMIN_USERNAME)
+export function ensureAdmin() {
+  const exists = db.prepare('SELECT 1 FROM users WHERE LOWER(username) = ?').get(ADMIN_USERNAME)
   if (exists) return
   db.prepare(
     `INSERT INTO users (username, password_hash, signature, role, display_name) VALUES (?, ?, ?, ?, ?)`,
   ).run(
-    PRODUCTION_ADMIN_USERNAME,
-    bcrypt.hashSync(PRODUCTION_ADMIN_PASSWORD, 10),
+    ADMIN_USERNAME,
+    bcrypt.hashSync(ADMIN_PASSWORD, 10),
     '博客管理员',
     'admin',
-    PRODUCTION_ADMIN_USERNAME,
+    ADMIN_USERNAME,
   )
-  console.log('[seed] 已创建线上管理员账号')
+  console.log('[seed] 已创建管理员账号:', ADMIN_USERNAME)
 }
 
 export async function runSeed() {
-  removeLegacyAdminUser()
-  ensureProductionAdmin()
+  removeAllAdminUsers()
+  ensureAdmin()
 
   const articleCount = db.prepare('SELECT COUNT(*) AS c FROM articles').get().c
   if (articleCount > 0) return
