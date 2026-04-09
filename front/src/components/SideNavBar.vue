@@ -118,7 +118,7 @@ function isActive(key) {
 
 <style scoped lang="postcss">
 .side-nav {
-  @apply hidden lg:flex flex-col w-64 p-6 space-y-4 bg-sky-50/50 backdrop-blur-lg rounded-r-[3rem] h-[calc(100vh-8rem)] sticky top-24 shadow-2xl shadow-sky-900/10;
+  @apply hidden lg:flex flex-col w-64 min-w-64 max-w-64 basis-64 shrink-0 p-6 space-y-4 bg-sky-50/50 backdrop-blur-lg rounded-r-[3rem] h-[calc(100vh-8rem)] sticky top-24 shadow-2xl shadow-sky-900/10;
 }
 
 .side-nav__profile {

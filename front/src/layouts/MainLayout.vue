@@ -34,7 +34,7 @@ const showSideNav = computed(() => route.meta?.sideNav !== false)
 }
 
 .layout-shell__main {
-  @apply flex-grow lg:ml-8 pb-20;
+  @apply flex-1 min-w-0 lg:ml-8 pb-20;
 }
 
 .layout-wide {
