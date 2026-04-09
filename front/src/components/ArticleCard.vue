@@ -1,7 +1,7 @@
 <template>
   <article class="article-card group">
     <div class="article-card__media">
-      <img class="article-card__img" :src="imageUrl" :alt="imageAlt || ''" />
+      <img class="article-card__img" :src="resolveAssetUrl(imageUrl)" :alt="imageAlt || ''" />
       <div class="article-card__badge-wrap">
         <span class="article-card__badge">{{ category }}</span>
       </div>
@@ -41,6 +41,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { resolveAssetUrl } from '../utils/assetUrl'
 
 const props = defineProps({
   id: { type: [String, Number], required: true },

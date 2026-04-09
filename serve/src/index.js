@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import path from 'path'
+import { fileURLToPath } from 'url'
 import express from 'express'
 import cors from 'cors'
 import { initSchema, dataDir } from './db.js'
@@ -13,6 +14,9 @@ import uploadsRoutes from './routes/uploads.js'
 initSchema()
 await runSeed()
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const picturesDir = path.resolve(__dirname, '../../pictures')
+
 const app = express()
 app.use(
   cors({
@@ -22,6 +26,8 @@ app.use(
 )
 app.use(express.json({ limit: '512kb' }))
 app.use('/uploads', express.static(path.join(dataDir, 'uploads')))
+app.use('/picture', express.static(picturesDir))
+app.use('/pictures', express.static(picturesDir))
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'blog-serve' })

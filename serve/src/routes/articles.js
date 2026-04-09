@@ -39,14 +39,21 @@ function normalizePayload(body) {
   if (title.length > 200) return { error: '标题过长' }
   const excerpt = String(body?.excerpt ?? '').trim()
   if (excerpt.length > 500) return { error: '摘要过长' }
+  const DEFAULT_IMAGE_BY_CAT = {
+    随笔: '/picture/suibi.png',
+    科研: '/picture/keyan.jpg',
+    开发: '/picture/kaifa.png',
+  }
+  const imageUrl = String(body?.imageUrl ?? '').trim() || DEFAULT_IMAGE_BY_CAT[category] || ''
+  const heroImage = String(body?.heroImage ?? '').trim() || '/picture/xiangqing.png'
   return {
     category,
     visibility,
     date_text: String(body?.date ?? body?.dateText ?? '').trim() || new Date().toISOString().slice(0, 10),
     title,
     excerpt,
-    image_url: String(body?.imageUrl ?? '').trim(),
-    hero_image: String(body?.heroImage ?? '').trim(),
+    image_url: imageUrl,
+    hero_image: heroImage,
     author_name: String(body?.authorName ?? '').trim() || '博主',
     author_published: String(body?.authorPublished ?? '').trim(),
     author_avatar: String(body?.authorAvatar ?? '').trim(),

@@ -21,34 +21,18 @@
     </div>
 
     <div v-if="!listLoading && !listError && totalPages > 1" class="pager">
-      <button
-        class="pager__nav-btn"
-        type="button"
-        :disabled="currentPage <= 1"
-        aria-label="上一页"
-        @click="goToPage(currentPage - 1)"
-      >
+      <button class="pager__nav-btn" type="button" :disabled="currentPage <= 1" aria-label="上一页"
+        @click="goToPage(currentPage - 1)">
         <span class="material-symbols-outlined pager__icon">chevron_left</span>
       </button>
       <div class="pager__pages">
-        <button
-          v-for="p in pageNumbers"
-          :key="p"
-          class="pager__page"
-          :class="{ 'pager__page--active': p === currentPage }"
-          type="button"
-          @click="goToPage(p)"
-        >
+        <button v-for="p in pageNumbers" :key="p" class="pager__page"
+          :class="{ 'pager__page--active': p === currentPage }" type="button" @click="goToPage(p)">
           {{ p }}
         </button>
       </div>
-      <button
-        class="pager__nav-btn"
-        type="button"
-        :disabled="currentPage >= totalPages"
-        aria-label="下一页"
-        @click="goToPage(currentPage + 1)"
-      >
+      <button class="pager__nav-btn" type="button" :disabled="currentPage >= totalPages" aria-label="下一页"
+        @click="goToPage(currentPage + 1)">
         <span class="material-symbols-outlined pager__icon">chevron_right</span>
       </button>
     </div>
@@ -74,24 +58,24 @@ const { canManageArticles } = storeToRefs(authStore)
 /** 与 SideNavBar 分类一致：all | 随笔 | 科研 | 开发 */
 const HEADER_BY_CAT = {
   all: {
-    title: '文章归档室',
+    title: '所有文章',
     subtitle:
-      '记录思维的流向，捕捉瞬时的灵感。这里是每一个故事和代码片段的归宿。',
+      '所有的胡思乱想和技术笔记。',
   },
   随笔: {
     title: '随笔手记',
     subtitle:
-      '生活随感、读书摘录与一时兴起的长短句。不求宏大，只记录当下真实的心跳与思绪。',
+      '没什么主题，记录点生活碎事、idea、组会要汇报的内容之类。',
   },
   科研: {
-    title: '科研札记',
+    title: '科研笔记',
     subtitle:
-      '论文笔记、实验想法与学术路上的小步探索。把问题写清楚，把推导留给自己与未来。',
+      '读过的论文和跑过的实验，主要是怕以后自己忘了。',
   },
   开发: {
     title: '开发手记',
     subtitle:
-      '代码片段、架构思考与技术踩坑记录。工程里没有白走的路，只有尚未写下来的经验。',
+      '踩坑记录与代码片段，希望能少写点 Bug',
   },
 }
 
