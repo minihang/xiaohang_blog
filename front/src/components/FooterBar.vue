@@ -5,14 +5,14 @@
         联系邮箱：affectionatexiaohang@gmail.com
       </p>
       <p class="footer__link">
-        QQ：1017567247
+        github: https://github.com/minihang/xiaohang_blog
       </p>
       <p class="footer__link">
-        联系支持
+        gitee: https://gitee.com/sweet-honey-in-dream/xiaohang_blog
       </p>
     </div>
     <p class="footer__copyright">
-      © 2026 蔚蓝清风 | 保持好奇与热爱
+      &copy; 2026 xiaohang | 保持好奇，持续输出 | All Rights Reserved.
     </p>
   </footer>
 </template>
@@ -33,6 +33,6 @@
 }
 
 .footer__copyright {
-  @apply text-slate-400 text-xs uppercase tracking-widest opacity-80;
+  @apply text-slate-400 text-xs tracking-widest opacity-80;
 }
 </style>
