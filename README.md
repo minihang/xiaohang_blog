@@ -29,9 +29,9 @@ blog/
 ```
 
 ## 本地开发
+node版本22.22.1
 
 ### 1) 启动后端
-
 ```bash
 cd serve
 npm install
