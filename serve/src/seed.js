@@ -39,7 +39,7 @@ export async function runSeed() {
   console.log('[seed] 初始化文章与留言…')
 
   const articlesUrl = pathToFileURL(
-    path.resolve(__dirname, './initial/articles.js'),
+    path.resolve(__dirname, '../../front/src/data/articles.js'),
   ).href
   const { articles } = await import(articlesUrl)
 

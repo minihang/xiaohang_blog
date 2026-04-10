@@ -24,7 +24,7 @@
  *   ```
  *   lang 可省略，省略则自动检测高亮
  * - Paragraph:
- *   其他文本按空行分段；同一段内允许换行，会合并为一个 p
+ *   其他文本按空行分段；同一段内如出现换行，会拆成多个 p（每行一个段落）
  */
 
 function isBlank(line) {
@@ -160,8 +160,13 @@ export function parsePaperMarkdown(src) {
       buf.push(lines[i])
       i += 1
     }
-    const text = buf.join('\n').trim()
-    if (text) blocks.push({ type: 'p', text })
+    // 处理段落内换行：将多行拆成多个 p
+    const ps = buf
+      .join('\n')
+      .split('\n')
+      .map((s) => String(s || '').trim())
+      .filter(Boolean)
+    for (const text of ps) blocks.push({ type: 'p', text })
   }
 
   if (blocks.length === 0) {
@@ -234,8 +239,15 @@ export function blocksToPaperMarkdown(blocks) {
     }
 
     if (b.type === 'p') {
-      out.push(String(b.text || '').trim())
-      out.push('')
+      // 兼容旧数据：若 p 内包含换行，则序列化为多个段落（空行分隔）
+      const ps = String(b.text || '')
+        .split('\n')
+        .map((s) => String(s || '').trim())
+        .filter(Boolean)
+      for (const p of ps) {
+        out.push(p)
+        out.push('')
+      }
       continue
     }
   }
