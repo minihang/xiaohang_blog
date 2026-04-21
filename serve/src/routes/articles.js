@@ -8,6 +8,31 @@ const router = Router()
 const CATEGORIES = new Set(['随笔', '科研', '开发'])
 const VISIBILITIES = new Set(['public', 'login', 'admin'])
 
+const SQL_ARTICLE_WITH_USER = `
+  SELECT a.*, u.avatar_path AS author_user_avatar_path, u.username AS author_user_username
+  FROM articles a
+  LEFT JOIN users u ON a.author_user_id = u.id
+`
+
+function getArticleRowWithUser(id) {
+  return db.prepare(`${SQL_ARTICLE_WITH_USER} WHERE a.id = ?`).get(id)
+}
+
+/** 绑定作者用户时跟随 users 头像；否则用入库的 author_avatar / 占位图 */
+function resolveArticleAuthorAvatar(row) {
+  if (row.author_user_id != null) {
+    const p = row.author_user_avatar_path
+    if (p != null && String(p).trim() !== '') return String(p).trim()
+    const uname = row.author_user_username
+    if (uname != null && String(uname).trim() !== '') {
+      return dicebearAvatar(String(uname).trim())
+    }
+  }
+  const authorName = row.author_name || ''
+  const stored = row.author_avatar != null ? String(row.author_avatar).trim() : ''
+  return stored || dicebearAvatar(authorName || row.title || 'blog')
+}
+
 function parseBlocks(body) {
   let blocks = body?.blocks
   if (typeof blocks === 'string') {
@@ -101,7 +126,7 @@ function mapDetailRow(row) {
     heroImage: row.hero_image,
     authorName,
     authorPublished: row.author_published,
-    authorAvatar: row.author_avatar || dicebearAvatar(authorName || row.title || 'blog'),
+    authorAvatar: resolveArticleAuthorAvatar(row),
     blocks,
     likeCount: Number(row.like_count) || 0,
   }
@@ -134,12 +159,12 @@ router.get('/', (req, res) => {
   if (normalized) {
     rows = db
       .prepare(
-        'SELECT * FROM articles WHERE category = ? ORDER BY id ASC LIMIT ? OFFSET ?',
+        'SELECT * FROM articles WHERE category = ? ORDER BY id DESC LIMIT ? OFFSET ?',
       )
       .all(normalized, pageSize, offset)
   } else {
     rows = db
-      .prepare('SELECT * FROM articles ORDER BY id ASC LIMIT ? OFFSET ?')
+      .prepare('SELECT * FROM articles ORDER BY id DESC LIMIT ? OFFSET ?')
       .all(pageSize, offset)
   }
   res.json({
@@ -156,18 +181,19 @@ router.post('/', requireAdmin, (req, res) => {
   if (row.error) {
     return res.status(400).json({ error: row.error })
   }
+  const authorUserId = req.user.sub
   const info = db
     .prepare(
       `INSERT INTO articles (
         category, visibility, date_text, title, excerpt,
-        image_url, hero_image, author_name, author_published, author_avatar, blocks_json
+        image_url, hero_image, author_name, author_published, author_avatar, author_user_id, blocks_json
       ) VALUES (
         @category, @visibility, @date_text, @title, @excerpt,
-        @image_url, @hero_image, @author_name, @author_published, @author_avatar, @blocks_json
+        @image_url, @hero_image, @author_name, @author_published, @author_avatar, @author_user_id, @blocks_json
       )`,
     )
-    .run(row)
-  const created = db.prepare('SELECT * FROM articles WHERE id = ?').get(info.lastInsertRowid)
+    .run({ ...row, author_user_id: authorUserId })
+  const created = getArticleRowWithUser(info.lastInsertRowid)
   res.status(201).json(mapDetailRow(created))
 })
 
@@ -196,7 +222,7 @@ router.get('/:id', optionalAuth, (req, res) => {
   if (Number.isNaN(id)) {
     return res.status(400).json({ error: '无效的文章 id' })
   }
-  const row = db.prepare('SELECT * FROM articles WHERE id = ?').get(id)
+  const row = getArticleRowWithUser(id)
   if (!row) {
     return res.status(404).json({ error: '文章不存在' })
   }
@@ -234,10 +260,11 @@ router.put('/:id', requireAdmin, (req, res) => {
       author_name = @author_name,
       author_published = @author_published,
       author_avatar = @author_avatar,
+      author_user_id = @author_user_id,
       blocks_json = @blocks_json
     WHERE id = @id`,
-  ).run({ ...row, id })
-  const updated = db.prepare('SELECT * FROM articles WHERE id = ?').get(id)
+  ).run({ ...row, id, author_user_id: req.user.sub })
+  const updated = getArticleRowWithUser(id)
   res.json(mapDetailRow(updated))
 })
 

@@ -35,6 +35,26 @@ function migrateArticlesLikeCount() {
   }
 }
 
+/** 仅当存在唯一管理员时，把未绑定作者用户的文章归到该账号（随头像更新） */
+export function backfillArticlesAuthorUserForSingleAdmin() {
+  const adminCount = db.prepare(`SELECT COUNT(*) AS c FROM users WHERE role = 'admin'`).get().c
+  if (adminCount !== 1) return
+  const r = db.prepare(`SELECT id FROM users WHERE role = 'admin' LIMIT 1`).get()
+  if (!r) return
+  db.prepare(`UPDATE articles SET author_user_id = ? WHERE author_user_id IS NULL`).run(r.id)
+}
+
+function migrateArticlesAuthorUserId() {
+  const cols = db.prepare('PRAGMA table_info(articles)').all()
+  const names = new Set(cols.map((c) => c.name))
+  if (!names.has('author_user_id')) {
+    db.exec(
+      'ALTER TABLE articles ADD COLUMN author_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL',
+    )
+    backfillArticlesAuthorUserForSingleAdmin()
+  }
+}
+
 export function initSchema() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -61,6 +81,7 @@ export function initSchema() {
       author_name TEXT,
       author_published TEXT,
       author_avatar TEXT,
+      author_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       blocks_json TEXT NOT NULL,
       like_count INTEGER NOT NULL DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
@@ -83,4 +104,5 @@ export function initSchema() {
   `)
   migrateUsersColumns()
   migrateArticlesLikeCount()
+  migrateArticlesAuthorUserId()
 }

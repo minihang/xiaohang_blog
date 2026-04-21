@@ -40,6 +40,14 @@ copy .env.example .env
 npm run dev
 ```
 
+**数据库初始化（seed）**：启动后端只会执行建表/迁移（`initSchema`），**不会**自动写入演示数据或重置管理员。首次克隆、空库，或你需要按 `serve/src/seed.js` 的逻辑重置管理员与示例内容时，在 `serve` 目录执行：
+
+```bash
+npm run seed
+```
+
+该命令会：删除库内所有 `role = 'admin'` 的用户并重新创建默认管理员；若 `articles` 表为空，则从 `front/src/data/articles.js` 导入文章并插入一批示例留言。
+
 后端默认地址：
 
 - `http://localhost:3001`
@@ -74,10 +82,12 @@ npm run build
 
 ## 默认账号（开发环境）
 
-后端启动时会自动 seed 数据，并确保存在一个管理员账号（定义在 `serve/src/seed.js`）。同时会在启动时清理旧的管理员账号，只保留一个新的管理员：
+执行 `npm run seed` 后，会按 `serve/src/seed.js` 创建（或重置）默认管理员：
 
 - **管理员用户名**：`admin`
 - **管理员密码**：`123456`
+
+`npm run seed` 会先删除所有管理员账号再创建上述账号；日常 `npm run dev` / `npm start` **不会**运行 seed，避免热重载或反复启动时反复清空管理员。
 
 强烈建议在你上传 GitHub 前，**自行修改/移除**该默认密码逻辑（或改为从环境变量读取），避免误用到线上环境。
 

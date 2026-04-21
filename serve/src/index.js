@@ -4,7 +4,6 @@ import { fileURLToPath } from 'url'
 import express from 'express'
 import cors from 'cors'
 import { initSchema, dataDir } from './db.js'
-import { runSeed } from './seed.js'
 import authRoutes from './routes/auth.js'
 import articlesRoutes from './routes/articles.js'
 import messagesRoutes from './routes/messages.js'
@@ -12,7 +11,6 @@ import profileRoutes from './routes/profile.js'
 import uploadsRoutes from './routes/uploads.js'
 
 initSchema()
-await runSeed()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const picturesDir = path.resolve(__dirname, '../../pictures')

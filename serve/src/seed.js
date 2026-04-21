@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs'
 import path from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
-import { db } from './db.js'
+import { backfillArticlesAuthorUserForSingleAdmin, db } from './db.js'
 import { dicebearAvatar } from './util/avatar.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -72,6 +72,7 @@ export async function runSeed() {
     }
   })
   insertArticles(articles)
+  backfillArticlesAuthorUserForSingleAdmin()
 
   const ins = db.prepare(
     `INSERT INTO messages (author_name, content, avatar_url, reply_to_id) VALUES (?, ?, ?, ?)`,
