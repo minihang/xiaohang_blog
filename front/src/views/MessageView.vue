@@ -69,11 +69,8 @@
         <div v-for="msg in messages" :key="msg.id" class="message-card group">
           <div class="message-card__row">
             <div class="message-card__avatar">
-              <img
-                :alt="msg.authorName + ' 的头像'"
-                class="message-card__avatar-img"
-                :src="resolveAssetUrl(msg.avatarUrl)"
-              />
+              <img :alt="msg.authorName + ' 的头像'" class="message-card__avatar-img"
+                :src="resolveAssetUrl(msg.avatarUrl)" />
             </div>
             <div class="message-card__content">
               <div class="message-card__meta">
@@ -87,13 +84,8 @@
                 {{ msg.content }}
               </p>
               <div class="message-card__actions">
-                <button
-                  v-if="canDeleteMessage"
-                  class="message-card__action message-card__action--danger"
-                  type="button"
-                  :aria-label="`删除 ${msg.authorName} 的留言`"
-                  @click="removeMessage(msg)"
-                >
+                <button v-if="canDeleteMessage" class="message-card__action message-card__action--danger" type="button"
+                  :aria-label="`删除 ${msg.authorName} 的留言`" @click="removeMessage(msg)">
                   <span class="material-symbols-outlined message-card__action-icon">delete</span>
                   删除
                 </button>
@@ -118,13 +110,8 @@
       </div>
     </div>
 
-    <CaptchaVerifyModal
-      v-model="showCaptchaModal"
-      description="请计算下方算式，验证通过后将立即发送你的留言。"
-      confirm-text="确认发送"
-      confirm-icon="send"
-      @verified="confirmCaptchaAndSend"
-    />
+    <CaptchaVerifyModal v-model="showCaptchaModal" description="请计算下方算式，验证通过后将立即发送你的留言。" confirm-text="确认发送"
+      confirm-icon="send" @verified="confirmCaptchaAndSend" />
   </div>
 </template>
 
