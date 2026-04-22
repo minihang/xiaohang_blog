@@ -7,10 +7,6 @@
         <RouterLink class="top-nav__link" :class="{ 'top-nav__link--active': path === '/' }" to="/">
           首页
         </RouterLink>
-        <RouterLink class="top-nav__link" :class="{ 'top-nav__link--active': path.startsWith('/article') }"
-          :to="{ name: 'article', params: { id: '1' } }">
-          文章
-        </RouterLink>
         <RouterLink class="top-nav__link" :class="{ 'top-nav__link--active': path === '/message' }" to="/message">
           留言板
         </RouterLink>

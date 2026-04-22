@@ -115,7 +115,8 @@
                 </div>
                 <pre class="paper-code__pre"><code class="hljs" v-html="highlightCode(block, i).html"></code></pre>
               </div>
-              <img v-else-if="block.type === 'img'" class="paper-article__img" alt="" :src="resolveAssetUrl(block.src)" />
+              <img v-else-if="block.type === 'img'" class="paper-article__img" alt=""
+                :src="resolveAssetUrl(block.src)" />
             </template>
           </article>
 

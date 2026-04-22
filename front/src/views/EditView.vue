@@ -88,7 +88,7 @@
           种模块：<code>lead</code>、<code>h2</code>、<code>p</code>、<code>quote</code>、<code>checklist</code>、<code>img</code>、<code>code</code>。行内语法：<code>**加粗**</code>。
           快捷键：<code>Ctrl+2</code> 标题、<code>Ctrl+Q</code> 引用、<code>Ctrl+U</code> 无序列表、<code>Ctrl+B</code>
           加粗、<code>Ctrl+Shift+K</code> 代码块、<code>Ctrl+Shift+`</code> 行内代码、<code>Ctrl+Shift+I</code>
-          图片、<code>Ctrl+Shift+L</code> Lead。
+          图片、<code>Ctrl+Shift+L</code> Lead、<code>Ctrl+Z</code> 撤销、<code>Ctrl+S</code> 缓存草稿。
         </p>
         <div class="edit-md">
           <div v-if="!isPreview" class="edit-md__pane">
@@ -188,7 +188,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import hljs from 'highlight.js'
@@ -197,6 +197,7 @@ import { ARTICLE_CATEGORIES } from '../data/articles'
 import { createArticle, fetchArticleById, updateArticle } from '../api/articles'
 import { uploadArticleImage } from '../api/uploads'
 import { useAuthStore } from '../stores/auth'
+import { useToast } from '../plugins/toast'
 import { blocksToPaperMarkdown, parsePaperMarkdown } from '../utils/paperMarkdown'
 import { renderInlineMarkdown } from '../utils/inlineCode'
 import { resolveAssetUrl } from '../utils/assetUrl'
@@ -205,6 +206,7 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const { user } = storeToRefs(auth)
+const toast = useToast()
 
 const isNew = computed(() => route.name === 'edit-new')
 
@@ -250,6 +252,27 @@ const saving = ref(false)
 const loadError = ref('')
 const saveError = ref('')
 const mdError = ref('')
+
+function draftStorageKey() {
+  return isNew.value ? 'article-edit-draft:new' : `article-edit-draft:${String(route.params.id || '')}`
+}
+
+function cacheDraftToLocalStorage() {
+  const payload = {
+    category: category.value,
+    visibility: visibility.value,
+    date: date.value,
+    datePicker: datePicker.value,
+    title: title.value,
+    excerpt: excerpt.value,
+    imageUrl: imageUrl.value,
+    heroImage: heroImage.value,
+    blocksMd: blocksMd.value,
+    updatedAt: Date.now(),
+  }
+  localStorage.setItem(draftStorageKey(), JSON.stringify(payload))
+  toast.success('内容已缓存')
+}
 
 const previewBlocks = computed(() => {
   const res = parsePaperMarkdown(blocksMd.value)
@@ -524,6 +547,11 @@ function cancelCrop() {
 
 onMounted(() => {
   nextTick(() => autoResizeMd())
+  window.addEventListener('keydown', onWindowKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', onWindowKeydown)
 })
 
 watch(
@@ -728,6 +756,12 @@ function insertIntoTextarea(el, text) {
 function onMdKeydown(e) {
   const el = mdEl.value
   if (!el) return
+  if (e.ctrlKey && !e.shiftKey && (e.key === 'Z' || e.key === 'z')) {
+    // 明确使用编辑器撤销，避免浏览器默认行为干扰。
+    e.preventDefault()
+    document.execCommand('undo')
+    return
+  }
   if (e.ctrlKey && !e.shiftKey && e.key === '2') {
     e.preventDefault()
     insertIntoTextarea(el, '\n## ')
@@ -824,6 +858,12 @@ function onMdKeydown(e) {
     })
     return
   }
+}
+
+function onWindowKeydown(e) {
+  if (!(e.ctrlKey && !e.shiftKey && (e.key === 'S' || e.key === 's'))) return
+  e.preventDefault()
+  cacheDraftToLocalStorage()
 }
 
 async function onSave() {
