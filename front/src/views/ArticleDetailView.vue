@@ -117,6 +117,10 @@
               </div>
               <img v-else-if="block.type === 'img'" class="paper-article__img" alt=""
                 :src="resolveAssetUrl(block.src)" />
+              <p v-else-if="block.type === 'a'">
+                <a :href="block.href" target="_blank" rel="noopener noreferrer"
+                  v-html="renderInlineMarkdown(block.text)"></a>
+              </p>
             </template>
           </article>
 
@@ -402,6 +406,17 @@ async function onDeleteArticle() {
 
 .paper-article {
   @apply prose prose-sky max-w-none text-on-surface-variant leading-relaxed text-lg space-y-8;
+  word-spacing: 0.12em;
+}
+
+.paper-article a,
+.paper-article :deep(a) {
+  @apply no-underline;
+}
+
+.paper-article a:hover,
+.paper-article :deep(a:hover) {
+  @apply underline decoration-current underline-offset-2;
 }
 
 .paper-article__lead {

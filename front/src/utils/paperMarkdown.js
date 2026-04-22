@@ -1,13 +1,12 @@
 /**
  * PaperMarkdown: 面向本项目 blocks 的“类 Markdown”语法。
  *
- * 支持块类型：lead / h2 / p / quote / checklist / img / code
+ * 支持块类型：lead（页面显示为“二级标题”）/ h2 / p / quote / checklist / img / code / a
  *
  * 语法约定（尽量宽松，方便手写）：
- * - Lead:
- *   :::lead
- *   text...
- *   :::
+ * - Lead（页面显示为“二级标题”）:
+ *   # text
+ *   （兼容旧语法：:::lead ... :::）
  * - H2:
  *   ## text
  * - Quote:
@@ -18,6 +17,8 @@
  *   - 列表项2（含 **加粗** 与 `code`）
  * - Image:
  *   ![alt](https://example.com/a.png)   alt 会被忽略（展示时本项目不渲染 alt）
+ * - Link（a 块）:
+ *   [text](https://example.com)
  * - Code:
  *   ```lang
  *   code...
@@ -57,6 +58,18 @@ export function parsePaperMarkdown(src) {
       continue
     }
 
+    // # text  -> lead (single-line)
+    // （注意：这里用 # 映射成 lead，是本项目定制语法，不是标准 Markdown 的 h1）
+    if (/^\s*#(?!#)/.test(line)) {
+      const m = line.trim().match(/^#\s+(.*)$/)
+      if (m) {
+        const text = String(m[1] || '').trim()
+        if (text) blocks.push({ type: 'lead', text })
+        i += 1
+        continue
+      }
+    }
+
     // :::lead ... :::
     if (/^\s*:::\s*lead\s*$/.test(line)) {
       i += 1
@@ -66,7 +79,7 @@ export function parsePaperMarkdown(src) {
         i += 1
       }
       if (i >= lines.length) {
-        return { error: 'Lead 块缺少结束标记 :::', blocks: [] }
+        return { error: '二级标题块缺少结束标记 :::', blocks: [] }
       }
       i += 1 // skip closing :::
       const text = buf.join('\n').trim()
@@ -124,6 +137,16 @@ export function parsePaperMarkdown(src) {
       continue
     }
 
+    // Link block: [text](href)
+    const link = line.trim().match(/^\[([^\]\n]+)\]\(([^)\n]+)\)\s*$/)
+    if (link) {
+      const text = String(link[1] || '').trim()
+      const href = String(link[2] || '').trim()
+      if (text && href) blocks.push({ type: 'a', text, href })
+      i += 1
+      continue
+    }
+
     // Checklist: consecutive "- " lines (unordered list)
     if (/^\s*-\s+/.test(line)) {
       const items = []
@@ -149,11 +172,13 @@ export function parsePaperMarkdown(src) {
       // 碰到下一个块的显式起始，则结束段落
       const t = lines[i].trim()
       if (
+        /^\s*#(?!#)\s+/.test(t) ||
         /^\s*:::\s*lead\s*$/.test(t) ||
         /^\s*```/.test(t) ||
         /^\s*##/.test(t) ||
         /^\s*>/.test(t) ||
-        /^!\[[^\]]*\]\(([^)]+)\)\s*$/.test(t)
+        /^!\[[^\]]*\]\(([^)]+)\)\s*$/.test(t) ||
+        /^\[([^\]\n]+)\]\(([^)\n]+)\)\s*$/.test(t)
       ) {
         break
       }
@@ -182,9 +207,7 @@ export function blocksToPaperMarkdown(blocks) {
     if (!b || typeof b !== 'object') continue
 
     if (b.type === 'lead') {
-      out.push(':::lead')
-      out.push(String(b.text || '').trim())
-      out.push(':::')
+      out.push(`# ${String(b.text || '').trim()}`)
       out.push('')
       continue
     }
@@ -225,6 +248,14 @@ export function blocksToPaperMarkdown(blocks) {
     if (b.type === 'img') {
       const src = String(b.src || '').trim()
       if (src) out.push(`![](${src})`)
+      out.push('')
+      continue
+    }
+
+    if (b.type === 'a') {
+      const text = String(b.text || '').trim()
+      const href = String(b.href || '').trim()
+      if (text && href) out.push(`[${text}](${href})`)
       out.push('')
       continue
     }

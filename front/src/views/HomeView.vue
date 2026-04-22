@@ -17,7 +17,8 @@
     <p v-else-if="listError" class="empty-tip">{{ listError }}</p>
     <p v-else-if="articles.length === 0" class="empty-tip">该分类下暂无文章</p>
     <div v-else class="article-list">
-      <ArticleCard v-for="item in articles" :key="item.id" v-bind="item" @read="onRead" />
+      <ArticleCard v-for="item in articles" :key="item.id" v-bind="item" :can-pin="canManageArticles"
+        :pin-loading="pinBusyId === String(item.id)" @read="onRead" @toggle-pin="onTogglePin" />
     </div>
 
     <div v-if="!listLoading && !listError && totalPages > 1" class="pager">
@@ -47,7 +48,7 @@ import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import ArticleCard from '../components/ArticleCard.vue'
-import { fetchArticleList } from '../api/articles'
+import { fetchArticleList, toggleArticlePin } from '../api/articles'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
@@ -105,6 +106,7 @@ const total = ref(0)
 const totalPages = ref(1)
 const listLoading = ref(true)
 const listError = ref('')
+const pinBusyId = ref('')
 
 const pageNumbers = computed(() => {
   const tp = totalPages.value
@@ -134,37 +136,52 @@ function goToPage(page) {
   router.push({ name: 'home', query: homeQueryForPage(page) })
 }
 
+async function loadList() {
+  listLoading.value = true
+  listError.value = ''
+  const page = currentPage.value
+  try {
+    const catParam = activeCatKey.value === 'all' ? undefined : activeCatKey.value
+    const res = await fetchArticleList(catParam, { page, pageSize: PAGE_SIZE })
+    articles.value = res.list
+    total.value = res.total
+    totalPages.value = res.totalPages
+    if (res.page !== page) {
+      router.replace({ name: 'home', query: homeQueryForPage(res.page) })
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  } catch (e) {
+    listError.value = String(e?.message || '加载失败')
+    articles.value = []
+    total.value = 0
+    totalPages.value = 1
+  } finally {
+    listLoading.value = false
+  }
+}
+
 watch(
   () => [activeCatKey.value, currentPage.value],
-  async () => {
-    listLoading.value = true
-    listError.value = ''
-    const page = currentPage.value
-    try {
-      const catParam = activeCatKey.value === 'all' ? undefined : activeCatKey.value
-      const res = await fetchArticleList(catParam, { page, pageSize: PAGE_SIZE })
-      articles.value = res.list
-      total.value = res.total
-      totalPages.value = res.totalPages
-      if (res.page !== page) {
-        router.replace({ name: 'home', query: homeQueryForPage(res.page) })
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-      }
-    } catch (e) {
-      listError.value = String(e?.message || '加载失败')
-      articles.value = []
-      total.value = 0
-      totalPages.value = 1
-    } finally {
-      listLoading.value = false
-    }
-  },
+  async () => loadList(),
   { immediate: true },
 )
 
 function onRead(id) {
   router.push({ name: 'article', params: { id: String(id) } })
+}
+
+async function onTogglePin(id) {
+  if (!canManageArticles.value || pinBusyId.value) return
+  pinBusyId.value = String(id)
+  try {
+    await toggleArticlePin(id)
+    await loadList()
+  } catch (e) {
+    listError.value = String(e?.response?.data?.error || e?.message || '置顶失败')
+  } finally {
+    pinBusyId.value = ''
+  }
 }
 </script>
 

@@ -1,5 +1,11 @@
 <template>
   <article class="article-card group">
+    <div v-if="isPinned" class="article-card__pin-wrap">
+      <span class="article-card__pin-mark">
+        <span class="material-symbols-outlined article-card__pin-icon">keep</span>
+        <span>已置顶</span>
+      </span>
+    </div>
     <div class="article-card__media">
       <img class="article-card__img" :src="resolveAssetUrl(imageUrl)" :alt="imageAlt || ''" />
       <div class="article-card__badge-wrap">
@@ -34,6 +40,11 @@
           {{ actionText }}
           <span class="material-symbols-outlined article-card__btn-icon">{{ actionIcon }}</span>
         </button>
+        <button v-if="canPin" class="article-card__pin-btn" type="button" :disabled="pinLoading"
+          @click="$emit('toggle-pin', id)">
+          <span class="material-symbols-outlined article-card__pin-icon">{{ isPinned ? 'keep_off' : 'keep' }}</span>
+          <span>{{ pinLoading ? '处理中…' : isPinned ? '取消置顶' : '置顶' }}</span>
+        </button>
       </div>
     </div>
   </article>
@@ -50,6 +61,9 @@ const props = defineProps({
   imageAlt: { type: String, default: '' },
   date: { type: String, required: true },
   access: { type: String, default: 'public' }, // public | login | admin
+  isPinned: { type: Boolean, default: false },
+  canPin: { type: Boolean, default: false },
+  pinLoading: { type: Boolean, default: false },
   title: { type: String, required: true },
   excerpt: { type: String, required: true },
   actionText: { type: String, default: '阅读全文' },
@@ -60,6 +74,7 @@ const props = defineProps({
 
 defineEmits({
   read: () => true,
+  'toggle-pin': () => true,
 })
 
 const accessLabel = computed(() => {
@@ -96,6 +111,10 @@ const accessClass = computed(() => {
 
 .article-card__badge-wrap {
   @apply absolute top-4 left-4;
+}
+
+.article-card__pin-wrap {
+  @apply absolute top-4 right-8 z-10;
 }
 
 .article-card__badge {
@@ -150,6 +169,18 @@ const accessClass = computed(() => {
   @apply text-primary font-bold text-sm flex items-center gap-1;
 }
 
+.article-card__pin-btn {
+  @apply text-xs font-bold px-3 py-1.5 rounded-full border border-sky-200 text-sky-700 bg-white/90 backdrop-blur-sm hover:bg-sky-50 disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-1;
+}
+
+.article-card__pin-mark {
+  @apply text-xs font-bold px-3 py-1.5 rounded-full bg-sky-100/90 text-sky-700 border border-sky-300/60 inline-flex items-center gap-1 backdrop-blur-sm shadow-sm;
+}
+
+.article-card__pin-icon {
+  @apply text-base;
+}
+
 .article-card__btn-icon {
   @apply transition-transform;
 }
@@ -158,4 +189,3 @@ const accessClass = computed(() => {
   @apply translate-x-1;
 }
 </style>
-

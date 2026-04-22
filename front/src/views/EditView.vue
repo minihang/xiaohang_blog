@@ -84,17 +84,19 @@
           </div>
         </div>
         <p class="edit-form__hint">
-          支持 7
-          种模块：<code>lead</code>、<code>h2</code>、<code>p</code>、<code>quote</code>、<code>checklist</code>、<code>img</code>、<code>code</code>。行内语法：<code>**加粗**</code>。
+          支持 8
+          种模块：<code>二级标题</code>、<code>h2</code>、<code>p</code>、<code>quote</code>、<code>checklist</code>、<code>img</code>、<code>code</code>、<code>a</code>。行内语法：<code>**加粗**</code>、<code>[链接文本](https://markdown.com.cn)</code>。
           快捷键：<code>Ctrl+2</code> 标题、<code>Ctrl+Q</code> 引用、<code>Ctrl+U</code> 无序列表、<code>Ctrl+B</code>
-          加粗、<code>Ctrl+Shift+K</code> 代码块、<code>Ctrl+Shift+`</code> 行内代码、<code>Ctrl+Shift+I</code>
-          图片、<code>Ctrl+Shift+L</code> Lead、<code>Ctrl+Z</code> 撤销、<code>Ctrl+S</code> 缓存草稿。
+          加粗、<code>Ctrl+L</code> 链接、<code>Ctrl+Shift+K</code> 代码块、<code>Ctrl+Shift+`</code>
+          行内代码、<code>Ctrl+Shift+I</code>
+          图片、<code>Ctrl+3</code> 二级标题、<code>Ctrl+Z</code> 撤销、<code>Ctrl+S</code> 缓存草稿。
         </p>
         <div class="edit-md">
           <div v-if="!isPreview" class="edit-md__pane">
             <textarea id="edit-blocks" ref="mdEl" v-model="blocksMd"
               class="edit-form__control edit-form__control--code edit-md__textarea" spellcheck="false"
-              @input="autoResizeMd" @paste="onMdPaste" @keydown="onMdKeydown" />
+              @input="autoResizeMd" @paste="onMdPaste" @dragover="onMdDragOver" @drop="onMdDrop"
+              @keydown="onMdKeydown" />
             <p v-if="mdError" class="edit-md__error">{{ mdError }}</p>
           </div>
           <div v-else class="edit-md__pane edit-md__preview">
@@ -134,6 +136,10 @@
                 </div>
                 <img v-else-if="block.type === 'img'" class="paper-article__img" alt=""
                   :src="resolveAssetUrl(block.src)" />
+                <p v-else-if="block.type === 'a'">
+                  <a :href="block.href" target="_blank" rel="noopener noreferrer"
+                    v-html="renderInlineMarkdown(block.text)"></a>
+                </p>
               </template>
             </article>
           </div>
@@ -284,15 +290,40 @@ function autoResizeMd() {
   const el = mdEl.value
   if (!el) return
   // reset then grow to content height
+  // 注意：直接改 textarea 高度可能导致页面滚动“跳到底部”（浏览器会尝试保持光标可见）。
+  // 这里尽量保留：页面滚动位置 + textarea 内部滚动位置 + 光标范围。
+  const prevWindowX = window.scrollX
+  const prevWindowY = window.scrollY
+  const prevElScrollTop = el.scrollTop
+  const prevStart = el.selectionStart
+  const prevEnd = el.selectionEnd
+
   el.style.height = 'auto'
   el.style.height = `${el.scrollHeight}px`
+
+  try {
+    window.scrollTo(prevWindowX, prevWindowY)
+  } catch {
+    /* ignore */
+  }
+  try {
+    el.scrollTop = prevElScrollTop
+  } catch {
+    /* ignore */
+  }
+  try {
+    if (typeof prevStart === 'number' && typeof prevEnd === 'number') {
+      el.setSelectionRange(prevStart, prevEnd)
+    }
+  } catch {
+    /* ignore */
+  }
 }
 
 async function onMdPaste(e) {
   const el = mdEl.value
   const items = e?.clipboardData?.items
   if (!el || !items || items.length === 0) return
-  console.log(items);
 
   const imgItem = Array.from(items).find((it) => it && it.kind === 'file' && /^image\//i.test(it.type))
   if (!imgItem) return
@@ -301,7 +332,10 @@ async function onMdPaste(e) {
   if (!file) return
 
   e.preventDefault()
+  await insertImageToMarkdown(file, el)
+}
 
+async function insertImageToMarkdown(file, el) {
   try {
     const { url } = await uploadArticleImage(file)
     const start = el.selectionStart ?? 0
@@ -317,6 +351,60 @@ async function onMdPaste(e) {
     })
   } catch (err) {
     window.alert(String(err?.response?.data?.error || err?.message || '图片上传失败'))
+  }
+}
+
+async function onMdDrop(e) {
+  const el = mdEl.value
+  const files = e?.dataTransfer?.files
+  if (!el || !files || files.length === 0) return
+
+  const file = Array.from(files).find((it) => it && /^image\//i.test(it.type))
+  if (!file) return
+
+  e.preventDefault()
+  el.focus()
+  setTextareaCaretFromPoint(el, e.clientX, e.clientY)
+  await insertImageToMarkdown(file, el)
+}
+
+function onMdDragOver(e) {
+  const el = mdEl.value
+  if (!el) return
+  e.preventDefault()
+  setTextareaCaretFromPoint(el, e.clientX, e.clientY)
+}
+
+function setTextareaCaretFromPoint(el, clientX, clientY) {
+  const doc = el?.ownerDocument || document
+  let idx = null
+
+  if (typeof doc.caretPositionFromPoint === 'function') {
+    const pos = doc.caretPositionFromPoint(clientX, clientY)
+    if (pos) {
+      if (pos.offsetNode === el && typeof pos.offset === 'number') {
+        idx = pos.offset
+      } else if (el.contains?.(pos.offsetNode) && typeof pos.offset === 'number') {
+        idx = pos.offset
+      }
+    }
+  } else if (typeof doc.caretRangeFromPoint === 'function') {
+    const range = doc.caretRangeFromPoint(clientX, clientY)
+    if (range) {
+      if (range.startContainer === el && typeof range.startOffset === 'number') {
+        idx = range.startOffset
+      } else if (el.contains?.(range.startContainer) && typeof range.startOffset === 'number') {
+        idx = range.startOffset
+      }
+    }
+  }
+
+  if (typeof idx !== 'number' || Number.isNaN(idx)) return
+  const safe = Math.max(0, Math.min(idx, String(el.value || '').length))
+  try {
+    el.setSelectionRange(safe, safe)
+  } catch {
+    /* ignore */
   }
 }
 
@@ -624,9 +712,7 @@ function publishedLineFromPicker(v) {
 
 function defaultBlocksTemplate() {
   return [
-    ':::lead',
-    '开篇导语。',
-    ':::',
+    '# 开篇导语。',
     '',
     '**加粗文本**',
     '',
@@ -750,6 +836,7 @@ function insertIntoTextarea(el, text) {
     el.focus()
     const p = start + text.length
     el.setSelectionRange(p, p)
+    autoResizeMd()
   })
 }
 
@@ -765,6 +852,11 @@ function onMdKeydown(e) {
   if (e.ctrlKey && !e.shiftKey && e.key === '2') {
     e.preventDefault()
     insertIntoTextarea(el, '\n## ')
+    return
+  }
+  if (e.ctrlKey && !e.shiftKey && e.key === '3') {
+    e.preventDefault()
+    insertIntoTextarea(el, '\n# ')
     return
   }
   if (e.ctrlKey && e.shiftKey && (e.code === 'Backquote' || e.key === '`')) {
@@ -809,17 +901,35 @@ function onMdKeydown(e) {
     }
     return
   }
-  if (e.ctrlKey && e.shiftKey && (e.key === 'L' || e.key === 'l')) {
+  if (e.ctrlKey && !e.shiftKey && (e.key === 'L' || e.key === 'l')) {
     e.preventDefault()
     const start = el.selectionStart ?? 0
     const end = el.selectionEnd ?? 0
-    const text = '\n:::lead\n\n:::\n'
     const v = blocksMd.value
-    blocksMd.value = v.slice(0, start) + text + v.slice(end)
-    nextTick(() => {
-      el.focus()
-      el.setSelectionRange(start + '\n:::lead\n'.length, start + '\n:::lead\n'.length)
-    })
+    const defaultUrl = 'https://markdown.com.cn'
+    if (end > start) {
+      const selected = v.slice(start, end)
+      const insert = `[${selected}](${defaultUrl})`
+      blocksMd.value = v.slice(0, start) + insert + v.slice(end)
+      nextTick(() => {
+        el.focus()
+        const textStart = start + 1
+        const textEnd = textStart + selected.length
+        el.setSelectionRange(textStart, textEnd)
+        autoResizeMd()
+      })
+    } else {
+      const linkText = '链接文本'
+      const insert = `[${linkText}](${defaultUrl})`
+      blocksMd.value = v.slice(0, start) + insert + v.slice(end)
+      nextTick(() => {
+        el.focus()
+        const textStart = start + 1
+        const textEnd = textStart + linkText.length
+        el.setSelectionRange(textStart, textEnd)
+        autoResizeMd()
+      })
+    }
     return
   }
   if (e.ctrlKey && !e.shiftKey && (e.key === 'Q' || e.key === 'q')) {
@@ -1112,6 +1222,17 @@ textarea.edit-md__textarea:focus {
 
 .paper-article {
   @apply prose prose-sky max-w-none text-on-surface-variant leading-relaxed space-y-8;
+  word-spacing: 0.12em;
+}
+
+.paper-article a,
+.paper-article :deep(a) {
+  @apply no-underline;
+}
+
+.paper-article a:hover,
+.paper-article :deep(a:hover) {
+  @apply underline decoration-current underline-offset-2;
 }
 
 .paper-article__lead {

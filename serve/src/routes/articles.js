@@ -96,6 +96,7 @@ function mapListRow(row) {
     title: row.title,
     excerpt: row.excerpt || '',
     likeCount: Number(row.like_count) || 0,
+    isPinned: Number(row.is_pinned) === 1,
   }
 }
 
@@ -129,6 +130,7 @@ function mapDetailRow(row) {
     authorAvatar: resolveArticleAuthorAvatar(row),
     blocks,
     likeCount: Number(row.like_count) || 0,
+    isPinned: Number(row.is_pinned) === 1,
   }
 }
 
@@ -159,12 +161,12 @@ router.get('/', (req, res) => {
   if (normalized) {
     rows = db
       .prepare(
-        'SELECT * FROM articles WHERE category = ? ORDER BY id DESC LIMIT ? OFFSET ?',
+        'SELECT * FROM articles WHERE category = ? ORDER BY is_pinned DESC, id DESC LIMIT ? OFFSET ?',
       )
       .all(normalized, pageSize, offset)
   } else {
     rows = db
-      .prepare('SELECT * FROM articles ORDER BY id DESC LIMIT ? OFFSET ?')
+      .prepare('SELECT * FROM articles ORDER BY is_pinned DESC, id DESC LIMIT ? OFFSET ?')
       .all(pageSize, offset)
   }
   res.json({
@@ -215,6 +217,23 @@ router.post('/:id/like', optionalAuth, (req, res) => {
   ).run(id)
   const next = db.prepare('SELECT like_count FROM articles WHERE id = ?').get(id)
   res.json({ likeCount: Number(next?.like_count) || 0 })
+})
+
+/** 管理员置顶/取消置顶（不传 isPinned 时默认切换） */
+router.post('/:id/pin', requireAdmin, (req, res) => {
+  const id = Number(req.params.id)
+  if (Number.isNaN(id)) {
+    return res.status(400).json({ error: '无效的文章 id' })
+  }
+  const row = db.prepare('SELECT id, is_pinned FROM articles WHERE id = ?').get(id)
+  if (!row) {
+    return res.status(404).json({ error: '文章不存在' })
+  }
+  const raw = req.body?.isPinned
+  const nextPinned =
+    raw === true || raw === 1 || raw === '1' ? 1 : raw === false || raw === 0 || raw === '0' ? 0 : row.is_pinned ? 0 : 1
+  db.prepare('UPDATE articles SET is_pinned = ? WHERE id = ?').run(nextPinned, id)
+  res.json({ id, isPinned: nextPinned === 1 })
 })
 
 router.get('/:id', optionalAuth, (req, res) => {

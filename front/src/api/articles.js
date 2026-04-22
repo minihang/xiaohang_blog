@@ -77,3 +77,14 @@ export async function likeArticle(id) {
   const { data } = await api.post(`/api/articles/${encodeURIComponent(String(id))}/like`)
   return data
 }
+
+/**
+ * @param {string | number} id
+ * @param {boolean | undefined} isPinned 传入可显式设置；不传则切换
+ * @returns {Promise<{ id: number; isPinned: boolean }>}
+ */
+export async function toggleArticlePin(id, isPinned) {
+  const payload = typeof isPinned === 'boolean' ? { isPinned } : {}
+  const { data } = await api.post(`/api/articles/${encodeURIComponent(String(id))}/pin`, payload)
+  return data
+}

@@ -35,6 +35,14 @@ function migrateArticlesLikeCount() {
   }
 }
 
+function migrateArticlesPinned() {
+  const cols = db.prepare('PRAGMA table_info(articles)').all()
+  const names = new Set(cols.map((c) => c.name))
+  if (!names.has('is_pinned')) {
+    db.exec('ALTER TABLE articles ADD COLUMN is_pinned INTEGER NOT NULL DEFAULT 0')
+  }
+}
+
 /** 仅当存在唯一管理员时，把未绑定作者用户的文章归到该账号（随头像更新） */
 export function backfillArticlesAuthorUserForSingleAdmin() {
   const adminCount = db.prepare(`SELECT COUNT(*) AS c FROM users WHERE role = 'admin'`).get().c
@@ -83,6 +91,7 @@ export function initSchema() {
       author_avatar TEXT,
       author_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       blocks_json TEXT NOT NULL,
+      is_pinned INTEGER NOT NULL DEFAULT 0,
       like_count INTEGER NOT NULL DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     );
@@ -104,5 +113,6 @@ export function initSchema() {
   `)
   migrateUsersColumns()
   migrateArticlesLikeCount()
+  migrateArticlesPinned()
   migrateArticlesAuthorUserId()
 }
