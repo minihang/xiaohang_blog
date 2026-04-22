@@ -2,6 +2,10 @@
 
 一个前后端分离的个人博客项目：前端使用 Vue 3 + Vite，后端使用 Node.js/Express + SQLite（better-sqlite3）。支持登录/注册、文章发布与编辑（类 Markdown 编辑 + 预览）、图片上传裁切、留言、文章可见性控制等。
 
+## 在线地址
+
+**项目链接：**[Xiaohang's Blog](http://121.41.33.247/)
+
 ## 功能特性
 
 - **文章系统**：创建/编辑/删除、分类（随笔/科研/开发）、可见性（公开/登录可见/管理员可见）
@@ -26,6 +30,7 @@ blog/
   front/          # 前端（Vite）
   serve/          # 后端（Express + SQLite）
   pictures/       # 默认封面/头图资源（由后端静态托管）
+  statics/        # 博客页面展示截图
 ```
 
 ## 本地开发
@@ -97,3 +102,13 @@ npm run build
 
 上传接口会把图片写到 `serve/data/uploads/` 下，并通过 `/uploads/...` 暴露为静态资源（开发环境可直接访问）。
 
+## 页面展示（statics）
+
+![页面截图 1](./statics/Snipaste_2026-04-22_20-55-57.png)
+![页面截图 2](./statics/Snipaste_2026-04-22_20-56-18.png)
+![页面截图 3](./statics/Snipaste_2026-04-22_20-56-25.png)
+![页面截图 4](./statics/Snipaste_2026-04-22_20-56-29.png)
+![页面截图 5](./statics/Snipaste_2026-04-22_20-56-36.png)
+![页面截图 6](./statics/Snipaste_2026-04-22_20-56-39.png)
+![页面截图 7](./statics/Snipaste_2026-04-22_20-56-45.png)
+![页面截图 8](./statics/Snipaste_2026-04-22_20-57-03.png)
