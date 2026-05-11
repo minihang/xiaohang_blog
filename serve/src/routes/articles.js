@@ -157,17 +157,16 @@ router.get('/', (req, res) => {
   if (page > totalPages) page = totalPages
   const offset = (page - 1) * pageSize
 
+  /** 列表按「设定日期」倒序：date_text 为 YYYY.MM.DD 或 YYYY-MM-DD，统一成后者再排序 */
+  const orderByDate = 'ORDER BY is_pinned DESC, REPLACE(date_text, \'.\', \'-\') DESC, id DESC'
+
   let rows
   if (normalized) {
     rows = db
-      .prepare(
-        'SELECT * FROM articles WHERE category = ? ORDER BY is_pinned DESC, id DESC LIMIT ? OFFSET ?',
-      )
+      .prepare(`SELECT * FROM articles WHERE category = ? ${orderByDate} LIMIT ? OFFSET ?`)
       .all(normalized, pageSize, offset)
   } else {
-    rows = db
-      .prepare('SELECT * FROM articles ORDER BY is_pinned DESC, id DESC LIMIT ? OFFSET ?')
-      .all(pageSize, offset)
+    rows = db.prepare(`SELECT * FROM articles ${orderByDate} LIMIT ? OFFSET ?`).all(pageSize, offset)
   }
   res.json({
     list: rows.map(mapListRow),
