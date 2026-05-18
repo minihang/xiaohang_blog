@@ -325,6 +325,12 @@ async function onMdPaste(e) {
   const items = e?.clipboardData?.items
   if (!el || !items || items.length === 0) return
 
+  // console.log(items);
+  // Array.from(items).forEach(e => {
+  //   console.log(e);
+  // });
+  // console.log('Items Array:', Array.from(items))
+
   const imgItem = Array.from(items).find((it) => it && it.kind === 'file' && /^image\//i.test(it.type))
   if (!imgItem) return
 
@@ -843,6 +849,11 @@ function insertIntoTextarea(el, text) {
 function onMdKeydown(e) {
   const el = mdEl.value
   if (!el) return
+  if (e.ctrlKey && e.shiftKey && (e.key === 'L' || e.key === 'l')) {
+    // Edge：Ctrl+Shift+L = 粘贴并前往，编辑正文时拦截。
+    e.preventDefault()
+    return
+  }
   if (e.ctrlKey && !e.shiftKey && (e.key === 'Z' || e.key === 'z')) {
     // 明确使用编辑器撤销，避免浏览器默认行为干扰。
     e.preventDefault()
