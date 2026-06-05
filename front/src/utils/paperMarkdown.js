@@ -128,11 +128,12 @@ export function parsePaperMarkdown(src) {
       continue
     }
 
-    // Image: ![alt](src)
-    const img = line.trim().match(/^!\[[^\]]*\]\(([^)]+)\)\s*$/)
+    // Image: ![caption](src)
+    const img = line.trim().match(/^!\[([^\]]*)\]\(([^)]+)\)\s*$/)
     if (img) {
-      const src = String(img[1] || '').trim()
-      if (src) blocks.push({ type: 'img', src })
+      const caption = String(img[1] || '').trim()
+      const src = String(img[2] || '').trim()
+      if (src) blocks.push({ type: 'img', src, ...(caption ? { caption } : {}) })
       i += 1
       continue
     }
@@ -247,7 +248,8 @@ export function blocksToPaperMarkdown(blocks) {
 
     if (b.type === 'img') {
       const src = String(b.src || '').trim()
-      if (src) out.push(`![](${src})`)
+      const caption = String(b.caption || '').trim()
+      if (src) out.push(`![${caption}](${src})`)
       out.push('')
       continue
     }

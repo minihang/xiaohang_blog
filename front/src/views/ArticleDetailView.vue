@@ -115,8 +115,11 @@
                 </div>
                 <pre class="paper-code__pre"><code class="hljs" v-html="highlightCode(block, i).html"></code></pre>
               </div>
-              <img v-else-if="block.type === 'img'" class="paper-article__img" alt=""
-                :src="resolveAssetUrl(block.src)" />
+              <figure v-else-if="block.type === 'img'" class="paper-article__figure">
+                <img class="paper-article__img" :alt="block.caption || ''" :src="resolveAssetUrl(block.src)" />
+                <figcaption v-if="block.caption" class="paper-article__caption"
+                  v-html="renderInlineMarkdown(block.caption)"></figcaption>
+              </figure>
               <p v-else-if="block.type === 'a'">
                 <a :href="block.href" target="_blank" rel="noopener noreferrer"
                   v-html="renderInlineMarkdown(block.text)"></a>
@@ -194,6 +197,7 @@ const CODE_LANG_OPTIONS = [
   { value: 'python', label: 'Python' },
   { value: 'sql', label: 'SQL' },
   { value: 'typescript', label: 'TypeScript' },
+  { value: 'vue', label: 'Vue' },
   { value: 'xml', label: 'XML' },
   { value: 'yaml', label: 'YAML' },
 ]
@@ -204,6 +208,12 @@ function normalizeLang(raw) {
   const v = String(raw || '').trim().toLowerCase()
   if (!v) return 'auto'
   if (v === 'auto') return 'auto'
+  return v
+}
+
+function resolveHighlightLang(lang) {
+  const v = normalizeLang(lang)
+  if (v === 'vue' || v === 'vuejs') return 'xml'
   return v
 }
 
@@ -224,7 +234,7 @@ function highlightCode(block, i) {
 
   if (choice !== 'auto') {
     try {
-      return { html: hljs.highlight(code, { language: choice }).value, detected: choice }
+      return { html: hljs.highlight(code, { language: resolveHighlightLang(choice) }).value, detected: choice }
     } catch {
       // fallback to auto
     }
@@ -456,7 +466,17 @@ async function onDeleteArticle() {
 }
 
 .paper-article__img {
-  @apply w-full rounded-lg shadow-lg my-12;
+  @apply block max-w-full rounded shadow-lg;
+  width: auto;
+}
+
+.paper-article__figure {
+  @apply my-12 table mx-auto;
+  max-width: 100%;
+}
+
+.paper-article__caption {
+  @apply mt-3 text-center text-sm leading-relaxed text-on-surface-variant;
 }
 
 :deep(.paper-inline-code) {
@@ -468,7 +488,8 @@ async function onDeleteArticle() {
 }
 
 .paper-code {
-  @apply my-8 rounded-lg overflow-hidden border border-sky-100 bg-slate-950/95;
+  @apply my-8 overflow-hidden border border-sky-100 bg-slate-950/95;
+  border-radius: 4px;
 }
 
 .paper-code__header {
