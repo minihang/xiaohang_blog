@@ -29,7 +29,7 @@
     </div>
   </div>
 
-  <div v-else-if="article">
+  <div v-else-if="article" ref="articleRoot">
     <div class="article-topbar">
       <RouterLink class="article-back-home" :to="{ name: 'home' }">
         <span class="material-symbols-outlined article-back-home__icon">arrow_back</span>
@@ -163,9 +163,11 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
 import { renderInlineMarkdown } from '../utils/inlineCode'
@@ -183,6 +185,13 @@ const article = ref(null)
 const articleLoading = ref(true)
 const loadError = ref('')
 const likeSubmitting = ref(false)
+const articleRoot = ref(null)
+
+let articleAnimCtx
+
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+}
 
 const CODE_LANG_OPTIONS = [
   { value: 'auto', label: '自动检测' },
@@ -257,6 +266,8 @@ const displayLikeCount = computed(() => formatLikeCount(article.value?.likeCount
 watch(
   () => route.params.id,
   async (id) => {
+    articleAnimCtx?.revert()
+    articleAnimCtx = null
     article.value = null
     loadError.value = ''
     articleLoading.value = true
@@ -268,10 +279,67 @@ watch(
       loadError.value = String(e?.message || '加载失败')
     } finally {
       articleLoading.value = false
+      await nextTick()
+      animateArticle()
     }
   },
   { immediate: true },
 )
+
+function animateArticle() {
+  if (!articleRoot.value || !article.value) return
+
+  articleAnimCtx = gsap.context(() => {
+    if (prefersReducedMotion()) {
+      gsap.set('.article-topbar, .paper-hero, .paper-hero__img, .paper-hero__pill, .paper-hero__title, .paper-hero__author, .paper-hero__actions, .paper-card, .paper-article > *, .paper-share', {
+        autoAlpha: 1,
+        y: 0,
+        scale: 1,
+      })
+      return
+    }
+
+    const tl = gsap.timeline({ defaults: { duration: 0.72, ease: 'power3.out' } })
+    tl.from('.article-topbar', { autoAlpha: 0, y: -12, duration: 0.45 })
+      .from('.paper-hero', { autoAlpha: 0, y: 28, scale: 0.985 }, '<0.05')
+      .from('.paper-hero__img', { scale: 1.08, duration: 1.1, ease: 'power2.out' }, '<')
+      .from('.paper-hero__pill', { autoAlpha: 0, y: 14 }, '<0.18')
+      .from('.paper-hero__title', { autoAlpha: 0, y: 26 }, '<0.08')
+      .from('.paper-hero__author, .paper-hero__actions', { autoAlpha: 0, y: 18, stagger: 0.08 }, '<0.12')
+
+    gsap.to('.paper-hero__img', {
+      yPercent: 8,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '.paper-hero',
+        start: 'top top',
+        end: 'bottom top',
+        scrub: 0.7,
+      },
+    })
+
+    gsap.set('.paper-card, .paper-article > *, .paper-share', { autoAlpha: 0, y: 28 })
+    ScrollTrigger.batch('.paper-card, .paper-article > *, .paper-share', {
+      start: 'top 86%',
+      once: true,
+      onEnter: (batch) => {
+        gsap.to(batch, {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.65,
+          ease: 'power3.out',
+          stagger: 0.06,
+          overwrite: true,
+        })
+      },
+    })
+    ScrollTrigger.refresh()
+  }, articleRoot.value)
+}
+
+onUnmounted(() => {
+  articleAnimCtx?.revert()
+})
 
 const canRead = computed(() => {
   const a = article.value
@@ -332,6 +400,7 @@ async function onDeleteArticle() {
 
 .paper-hero {
   @apply relative w-full rounded-xl overflow-hidden mb-8 shadow-2xl shadow-sky-900/10;
+  will-change: transform, opacity;
 }
 
 .paper-hero__overlay {
@@ -340,6 +409,7 @@ async function onDeleteArticle() {
 
 .paper-hero__img {
   @apply w-full h-[400px] object-cover;
+  will-change: transform;
 }
 
 .paper-hero__content {
@@ -412,6 +482,12 @@ async function onDeleteArticle() {
 
 .paper-card {
   @apply bg-surface-container-lowest rounded-xl p-8 lg:p-12 shadow-sm;
+  will-change: transform, opacity;
+}
+
+.paper-article > *,
+.paper-share {
+  will-change: transform, opacity;
 }
 
 .paper-article {

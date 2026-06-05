@@ -1,5 +1,5 @@
 <template>
-  <div class="message-page">
+  <div ref="messageRoot" class="message-page">
     <section class="message-header">
       <RouterLink class="message-header__back" :to="{ name: 'home' }">
         <span class="material-symbols-outlined message-header__back-icon">arrow_back</span>
@@ -66,7 +66,7 @@
         <p v-if="listLoading && messages.length === 0" class="message-loading-tip">留言加载中…</p>
         <p v-else-if="!listLoading && messages.length === 0" class="message-empty-tip">暂时还没有留言，来当第一个吧。</p>
 
-        <div v-for="msg in messages" :key="msg.id" class="message-card group">
+        <div v-for="msg in messages" :key="msg.id" class="message-card group" :data-message-id="String(msg.id)">
           <div class="message-card__row">
             <div class="message-card__avatar">
               <img :alt="msg.authorName + ' 的头像'" class="message-card__avatar-img"
@@ -116,9 +116,11 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useAuthStore } from '../stores/auth'
 import { deleteMessage, fetchMessageList, postMessage } from '../api/messages'
 import { resolveAssetUrl } from '../utils/assetUrl'
@@ -148,8 +150,17 @@ watch(
 
 /** @type {import('vue').Ref<{ id: string; authorName: string } | null>} */
 const replyingTo = ref(null)
+const messageRoot = ref(null)
 const messageFormCardEl = ref(null)
 const contentTextareaEl = ref(null)
+
+let pageAnimCtx
+let messageListCtx
+const animatedMessageIds = new Set()
+
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+}
 
 function escapeRegExp(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -186,6 +197,19 @@ function beginReply(msg) {
 
   nextTick(() => {
     messageFormCardEl.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (!prefersReducedMotion() && messageFormCardEl.value) {
+      gsap.fromTo(
+        messageFormCardEl.value,
+        { boxShadow: '0 0 0 rgba(14, 165, 233, 0)' },
+        {
+          boxShadow: '0 24px 80px rgba(14, 165, 233, 0.18)',
+          duration: 0.34,
+          yoyo: true,
+          repeat: 1,
+          ease: 'power2.out',
+        },
+      )
+    }
     const el = contentTextareaEl.value
     el?.focus()
     requestAnimationFrame(() => {
@@ -263,7 +287,92 @@ async function loadMore() {
 }
 
 onMounted(() => {
+  if (messageRoot.value) {
+    pageAnimCtx = gsap.context(() => {
+      if (prefersReducedMotion()) return
+
+      const tl = gsap.timeline({ defaults: { duration: 0.65, ease: 'power3.out' } })
+      tl.from('.message-header__back', { autoAlpha: 0, x: -18, duration: 0.42 })
+        .from('.message-header__title', { autoAlpha: 0, y: 24 }, '<0.08')
+        .from('.message-header__subtitle', { autoAlpha: 0, y: 16 }, '<0.1')
+        .from('.message-form-card', { autoAlpha: 0, y: 26, scale: 0.985 }, '<0.16')
+        .from('.message-wall__header', { autoAlpha: 0, y: 16 }, '<0.1')
+    }, messageRoot.value)
+    messageListCtx = gsap.context(() => {}, messageRoot.value)
+  }
   loadInitial()
+})
+
+function animatePendingMessageCards() {
+  if (!messageRoot.value) return
+
+  const cards = Array.from(messageRoot.value.querySelectorAll('.message-card'))
+  const pendingCards = cards.filter((card) => {
+    const id = card.dataset.messageId
+    return id && !animatedMessageIds.has(id)
+  })
+
+  if (pendingCards.length === 0) return
+
+  pendingCards.forEach((card) => animatedMessageIds.add(card.dataset.messageId))
+
+  if (prefersReducedMotion()) {
+    gsap.set(pendingCards, {
+      autoAlpha: 1,
+      y: 0,
+      scale: 1,
+      clearProps: 'opacity,visibility,transform',
+    })
+    return
+  }
+
+  messageListCtx?.add(() => {
+    gsap.set(pendingCards, { autoAlpha: 0, y: 12, scale: 0.995 })
+
+    pendingCards.forEach((card, index) => {
+      ScrollTrigger.create({
+        trigger: card,
+        start: 'top 96%',
+        once: true,
+        onEnter: () => {
+          gsap.to(card, {
+            autoAlpha: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.3,
+            delay: Math.min(index, 4) * 0.025,
+            ease: 'power2.out',
+            overwrite: true,
+            clearProps: 'opacity,visibility,transform',
+          })
+        },
+      })
+    })
+
+    ScrollTrigger.refresh()
+  })
+}
+
+watch(
+  messages,
+  async () => {
+    await nextTick()
+    animatePendingMessageCards()
+  },
+  { flush: 'post' },
+)
+
+watch(replyingTo, async (value) => {
+  if (!value || prefersReducedMotion()) return
+  await nextTick()
+  const hint = messageRoot.value?.querySelector('.message-reply-hint')
+  if (!hint) return
+  gsap.fromTo(hint, { autoAlpha: 0, y: -8, scale: 0.98 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.32, ease: 'power2.out' })
+})
+
+onUnmounted(() => {
+  pageAnimCtx?.revert()
+  messageListCtx?.revert()
 })
 
 function onSubmit() {
@@ -344,6 +453,7 @@ async function confirmCaptchaAndSend() {
 
 .message-form-card {
   @apply w-full bg-surface-container-low rounded-xl p-8 shadow-sm;
+  will-change: transform, opacity, box-shadow;
 }
 
 .message-form-card__title-row {
@@ -449,6 +559,7 @@ async function confirmCaptchaAndSend() {
 
 .message-card {
   @apply relative bg-surface-container-lowest rounded-xl p-6 shadow-xl shadow-sky-900/5 border border-sky-50 dark:border-sky-900/10 transition-all duration-300 hover:translate-y-[-4px];
+  will-change: transform, opacity;
 }
 
 .message-card__row {

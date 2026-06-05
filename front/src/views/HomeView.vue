@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div ref="homeRoot">
     <div class="page-header">
       <div>
         <h1 class="page-header__title">{{ pageHeader.title }}</h1>
@@ -44,9 +44,11 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import ArticleCard from '../components/ArticleCard.vue'
 import { fetchArticleList, toggleArticlePin } from '../api/articles'
 import { useAuthStore } from '../stores/auth'
@@ -107,6 +109,14 @@ const totalPages = ref(1)
 const listLoading = ref(true)
 const listError = ref('')
 const pinBusyId = ref('')
+const homeRoot = ref(null)
+
+let introCtx
+let listCtx
+
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+}
 
 const pageNumbers = computed(() => {
   const tp = totalPages.value
@@ -167,6 +177,152 @@ watch(
   { immediate: true },
 )
 
+watch(
+  articles,
+  async () => {
+    listCtx?.revert()
+    listCtx = null
+    await nextTick()
+    if (!homeRoot.value || articles.value.length === 0) return
+
+    listCtx = gsap.context(() => {
+      if (prefersReducedMotion()) {
+        gsap.set('.article-card, .article-card__media, .article-card__badge-wrap, .article-card__meta, .article-card__title, .article-card__excerpt, .article-card__footer', {
+          autoAlpha: 1,
+          x: 0,
+          y: 0,
+          scale: 1,
+          clearProps: 'opacity,visibility,transform',
+        })
+        return
+      }
+
+      const cards = gsap.utils.toArray('.article-card')
+      cards.forEach((card) => {
+        const media = card.querySelector('.article-card__media')
+        const badge = card.querySelector('.article-card__badge-wrap')
+        const content = card.querySelectorAll(
+          '.article-card__meta, .article-card__title, .article-card__excerpt, .article-card__footer',
+        )
+
+        gsap.set(card, { autoAlpha: 0, y: 22, scale: 0.992 })
+        gsap.set(media, { autoAlpha: 0, x: -18, scale: 1.04 })
+        gsap.set(badge, { autoAlpha: 0, y: -8, scale: 0.92 })
+        gsap.set(content, { autoAlpha: 0, y: 14 })
+
+        ScrollTrigger.create({
+          trigger: card,
+          start: 'top 86%',
+          once: true,
+          onEnter: () => {
+            const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
+            tl.to(card, {
+              autoAlpha: 1,
+              y: 0,
+              scale: 1,
+              duration: 0.52,
+              clearProps: 'opacity,visibility,transform',
+            })
+              .to(media, {
+                autoAlpha: 1,
+                x: 0,
+                scale: 1,
+                duration: 0.72,
+                clearProps: 'opacity,visibility,transform',
+              }, '<0.06')
+              .to(badge, {
+                autoAlpha: 1,
+                y: 0,
+                scale: 1,
+                duration: 0.42,
+                ease: 'back.out(1.7)',
+                clearProps: 'opacity,visibility,transform',
+              }, '<0.18')
+              .to(content, {
+                autoAlpha: 1,
+                y: 0,
+                duration: 0.46,
+                stagger: 0.055,
+                clearProps: 'opacity,visibility,transform',
+              }, '<0.08')
+          },
+        })
+      })
+
+      gsap.fromTo(
+        '.pager, .pager-meta',
+        { autoAlpha: 0, y: 12 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.42,
+          ease: 'power2.out',
+          clearProps: 'opacity,visibility,transform',
+          delay: 0.12,
+        },
+      )
+
+      ScrollTrigger.refresh()
+    }, homeRoot.value)
+  },
+  { flush: 'post' },
+)
+
+watch(
+  () => pinBusyId.value,
+  async (id) => {
+    if (!id || prefersReducedMotion()) return
+    await nextTick()
+    if (!homeRoot.value) return
+
+    const card = homeRoot.value.querySelector(`.article-card[data-article-id="${CSS.escape(String(id))}"]`)
+    if (!card) return
+    gsap.fromTo(
+      card,
+      { boxShadow: '0 18px 60px rgba(14, 116, 144, 0.06)' },
+      {
+        boxShadow: '0 24px 80px rgba(14, 165, 233, 0.18)',
+        duration: 0.28,
+        yoyo: true,
+        repeat: 1,
+        ease: 'power2.out',
+        clearProps: 'boxShadow',
+      },
+    )
+  },
+)
+
+watch(
+  canManageArticles,
+  async (value) => {
+    if (!value) return
+    await nextTick()
+    if (!homeRoot.value) return
+
+    const cta = homeRoot.value.querySelector('.primary-cta')
+    if (!cta) return
+    gsap.set(cta, { autoAlpha: 1, y: 0, scale: 1, clearProps: 'opacity,visibility,transform' })
+  },
+  { flush: 'post' },
+)
+
+onMounted(() => {
+  if (!homeRoot.value) return
+  introCtx = gsap.context(() => {
+    if (prefersReducedMotion()) return
+
+    const tl = gsap.timeline({ defaults: { duration: 0.65, ease: 'power3.out' } })
+    tl.from('.page-header__title', { autoAlpha: 0, y: 26 })
+      .from('.page-header__subtitle', { autoAlpha: 0, y: 18 }, '<0.12')
+      .from('.empty-tip, .pager, .pager-meta', { autoAlpha: 0, y: 14, duration: 0.45 }, '<0.1')
+  }, homeRoot.value)
+})
+
+onUnmounted(() => {
+  introCtx?.revert()
+  listCtx?.revert()
+})
+
 function onRead(id) {
   router.push({ name: 'article', params: { id: String(id) } })
 }
@@ -199,7 +355,7 @@ async function onTogglePin(id) {
 }
 
 .primary-cta {
-  @apply flex items-center gap-2 bg-primary text-on-primary px-8 py-4 rounded-full font-bold shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all duration-300;
+  @apply flex items-center gap-2 bg-gradient-to-r from-primary to-sky-500 text-white px-8 py-4 rounded-full font-bold shadow-xl shadow-primary/25 hover:shadow-primary/35 hover:brightness-105 hover:scale-105 active:scale-95 transition-all duration-300;
 }
 
 .primary-cta__icon {
@@ -212,6 +368,10 @@ async function onTogglePin(id) {
 
 .article-list {
   @apply flex flex-col gap-8;
+}
+
+.article-list :deep(.article-card) {
+  will-change: transform, opacity;
 }
 
 .pager {

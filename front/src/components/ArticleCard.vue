@@ -1,5 +1,5 @@
 <template>
-  <article class="article-card group">
+  <article ref="cardRoot" class="article-card group" :data-article-id="String(id)">
     <div v-if="isPinned" class="article-card__pin-wrap">
       <span class="article-card__pin-mark">
         <span class="material-symbols-outlined article-card__pin-icon">keep</span>
@@ -51,7 +51,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { gsap } from 'gsap'
 import { resolveAssetUrl } from '../utils/assetUrl'
 
 const props = defineProps({
@@ -71,6 +72,15 @@ const props = defineProps({
   /** 列表接口会带上，卡片可不展示 */
   likeCount: { type: Number, default: undefined },
 })
+
+const cardRoot = ref(null)
+let enterHandler
+let leaveHandler
+let cardCtx
+
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+}
 
 defineEmits({
   read: () => true,
@@ -94,11 +104,86 @@ const accessClass = computed(() => {
   if (props.access === 'admin') return 'article-card__meta-item--admin'
   return 'article-card__meta-item--public'
 })
+
+onMounted(() => {
+  if (!cardRoot.value || prefersReducedMotion()) return
+
+  cardCtx = gsap.context(() => {
+    const img = cardRoot.value.querySelector('.article-card__img')
+    const title = cardRoot.value.querySelector('.article-card__title')
+    const icon = cardRoot.value.querySelector('.article-card__btn-icon')
+
+    enterHandler = () => {
+      gsap.to(cardRoot.value, {
+        y: -6,
+        scale: 1.006,
+        duration: 0.32,
+        ease: 'power2.out',
+        overwrite: 'auto',
+      })
+      gsap.to(img, {
+        scale: 1.07,
+        duration: 0.55,
+        ease: 'power2.out',
+        overwrite: 'auto',
+      })
+      gsap.to(title, {
+        x: 3,
+        duration: 0.28,
+        ease: 'power2.out',
+        overwrite: 'auto',
+      })
+      gsap.to(icon, {
+        x: 6,
+        duration: 0.28,
+        ease: 'power2.out',
+        overwrite: 'auto',
+      })
+    }
+
+    leaveHandler = () => {
+      gsap.to(cardRoot.value, {
+        y: 0,
+        scale: 1,
+        duration: 0.34,
+        ease: 'power2.out',
+        overwrite: 'auto',
+        clearProps: 'transform',
+      })
+      gsap.to(img, {
+        scale: 1,
+        duration: 0.5,
+        ease: 'power2.out',
+        overwrite: 'auto',
+        clearProps: 'transform',
+      })
+      gsap.to([title, icon], {
+        x: 0,
+        duration: 0.26,
+        ease: 'power2.out',
+        overwrite: 'auto',
+        clearProps: 'transform',
+      })
+    }
+
+    cardRoot.value.addEventListener('mouseenter', enterHandler)
+    cardRoot.value.addEventListener('mouseleave', leaveHandler)
+  }, cardRoot.value)
+})
+
+onUnmounted(() => {
+  if (cardRoot.value) {
+    if (enterHandler) cardRoot.value.removeEventListener('mouseenter', enterHandler)
+    if (leaveHandler) cardRoot.value.removeEventListener('mouseleave', leaveHandler)
+  }
+  cardCtx?.revert()
+})
 </script>
 
 <style scoped lang="postcss">
 .article-card {
-  @apply relative bg-surface-container-lowest rounded-xl overflow-hidden shadow-2xl shadow-sky-900/5 hover:shadow-sky-900/10 transition-all duration-500 flex flex-col md:flex-row w-full;
+  @apply relative bg-surface-container-lowest rounded-xl overflow-hidden shadow-2xl shadow-sky-900/5 hover:shadow-sky-900/10 transition-shadow duration-300 flex flex-col md:flex-row w-full;
+  will-change: transform;
 }
 
 .article-card__media {
@@ -106,7 +191,8 @@ const accessClass = computed(() => {
 }
 
 .article-card__img {
-  @apply h-64 md:h-full w-full object-cover group-hover:scale-110 transition-transform duration-700;
+  @apply h-64 md:h-full w-full object-cover;
+  will-change: transform;
 }
 
 .article-card__badge-wrap {
@@ -155,6 +241,7 @@ const accessClass = computed(() => {
 
 .article-card__title {
   @apply text-2xl font-bold text-sky-950 mb-3 group-hover:text-primary transition-colors;
+  will-change: transform;
 }
 
 .article-card__excerpt {
@@ -182,10 +269,6 @@ const accessClass = computed(() => {
 }
 
 .article-card__btn-icon {
-  @apply transition-transform;
-}
-
-.article-card__btn:hover .article-card__btn-icon {
-  @apply translate-x-1;
+  will-change: transform;
 }
 </style>
