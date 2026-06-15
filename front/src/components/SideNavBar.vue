@@ -1,5 +1,34 @@
 <template>
-  <aside class="side-nav">
+  <aside v-if="isArticleRoute" class="side-nav side-nav--toc">
+    <div class="side-nav__toc-head">
+      <span class="material-symbols-outlined side-nav__toc-icon">toc</span>
+      <div class="side-nav__toc-title-wrap">
+        <p class="side-nav__toc-kicker">目录</p>
+        <h3 class="side-nav__toc-title">{{ tocTitle }}</h3>
+      </div>
+    </div>
+
+    <nav class="side-nav__toc-list" aria-label="文章目录">
+      <a
+        v-for="item in tocItems"
+        :key="item.id"
+        class="side-nav__toc-link"
+        :href="`#${item.id}`"
+        @click="onTocClick"
+      >
+        {{ item.text }}
+      </a>
+      <p v-if="tocLoading" class="side-nav__toc-empty">目录加载中…</p>
+      <p v-else-if="tocItems.length === 0" class="side-nav__toc-empty">暂无目录</p>
+    </nav>
+
+    <RouterLink class="side-nav__toc-back" :to="{ name: 'home' }">
+      <span class="material-symbols-outlined">arrow_back</span>
+      <span>返回首页</span>
+    </RouterLink>
+  </aside>
+
+  <aside v-else class="side-nav">
     <div class="side-nav__profile">
       <template v-if="isLoggedIn">
         <div class="side-nav__avatar">
@@ -81,15 +110,36 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '../stores/auth'
 import { resolveAssetUrl } from '../utils/assetUrl'
+import { fetchArticleById } from '../api/articles'
 
 const route = useRoute()
 const auth = useAuthStore()
 const { isLoggedIn, user } = storeToRefs(auth)
+const tocArticle = ref(null)
+const tocLoading = ref(false)
+
+const isArticleRoute = computed(() => route.name === 'article')
+
+const tocTitle = computed(() => {
+  const title = tocArticle.value?.title
+  return typeof title === 'string' && title.trim() ? title.trim() : '文章目录'
+})
+
+const tocItems = computed(() => {
+  const blocks = Array.isArray(tocArticle.value?.blocks) ? tocArticle.value.blocks : []
+  return blocks
+    .map((block, index) => ({ block, index }))
+    .filter(({ block }) => block?.type === 'h2' && typeof block.text === 'string' && block.text.trim())
+    .map(({ block, index }) => ({
+      id: `paper-heading-${index}`,
+      text: stripInlineMarkdown(block.text),
+    }))
+})
 
 const displayName = computed(() => (user.value?.name ? String(user.value.name) : '用户'))
 
@@ -114,11 +164,88 @@ function isActive(key) {
   if (key === 'all') return !q || q === 'all'
   return q === key
 }
+
+function stripInlineMarkdown(text) {
+  return String(text || '')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/<[^>]+>/g, '')
+    .trim()
+}
+
+function onTocClick(event) {
+  const targetId = event.currentTarget?.getAttribute('href')?.slice(1)
+  if (!targetId) return
+  const target = document.getElementById(targetId)
+  if (!target) return
+  event.preventDefault()
+  target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  window.history.replaceState(null, '', `#${targetId}`)
+}
+
+watch(
+  () => [route.name, route.params.id],
+  async ([name, id]) => {
+    tocArticle.value = null
+    if (name !== 'article' || !id) return
+    tocLoading.value = true
+    try {
+      const data = await fetchArticleById(id)
+      tocArticle.value = data && !data.forbidden ? data : null
+    } catch {
+      tocArticle.value = null
+    } finally {
+      tocLoading.value = false
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <style scoped lang="postcss">
 .side-nav {
   @apply hidden lg:flex flex-col w-64 min-w-64 max-w-64 basis-64 shrink-0 p-6 space-y-4 bg-sky-50/50 backdrop-blur-lg rounded-r-[3rem] h-[calc(100vh-8rem)] sticky top-24 shadow-2xl shadow-sky-900/10;
+}
+
+.side-nav--toc {
+  @apply space-y-5;
+}
+
+.side-nav__toc-head {
+  @apply flex items-start gap-3 px-2 pb-5 border-b border-sky-100;
+}
+
+.side-nav__toc-icon {
+  @apply text-2xl text-sky-600 mt-0.5 shrink-0;
+}
+
+.side-nav__toc-title-wrap {
+  @apply min-w-0 flex-1;
+}
+
+.side-nav__toc-kicker {
+  @apply text-xs font-bold uppercase tracking-widest text-sky-500 mb-1;
+}
+
+.side-nav__toc-title {
+  @apply text-base font-extrabold leading-snug text-sky-900 line-clamp-2;
+}
+
+.side-nav__toc-list {
+  @apply flex flex-col gap-1 flex-grow overflow-y-auto pr-1;
+}
+
+.side-nav__toc-link {
+  @apply block rounded-2xl px-4 py-2.5 text-sm font-semibold leading-snug text-slate-600 no-underline hover:bg-sky-100/70 hover:text-sky-800 transition-colors;
+}
+
+.side-nav__toc-empty {
+  @apply px-4 py-3 text-sm text-slate-500;
+}
+
+.side-nav__toc-back {
+  @apply flex items-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-sky-700 no-underline hover:bg-sky-100/70 transition-colors border-t border-sky-100;
 }
 
 .side-nav__profile {

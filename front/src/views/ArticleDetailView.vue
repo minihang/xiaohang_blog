@@ -11,12 +11,6 @@
   </div>
 
   <div v-else-if="article?.forbidden" class="denied">
-    <div class="article-topbar">
-      <RouterLink class="article-back-home" :to="{ name: 'home' }">
-        <span class="material-symbols-outlined article-back-home__icon">arrow_back</span>
-        返回首页
-      </RouterLink>
-    </div>
     <div class="denied__card">
       <span class="material-symbols-outlined denied__icon">lock</span>
       <h2 class="denied__title">无权访问</h2>
@@ -30,13 +24,6 @@
   </div>
 
   <div v-else-if="article" ref="articleRoot">
-    <div class="article-topbar">
-      <RouterLink class="article-back-home" :to="{ name: 'home' }">
-        <span class="material-symbols-outlined article-back-home__icon">arrow_back</span>
-        返回首页
-      </RouterLink>
-    </div>
-
     <div class="paper-hero">
       <div class="paper-hero__overlay"></div>
       <img class="paper-hero__img" alt="" :src="article.heroImage" />
@@ -78,7 +65,7 @@
           <article class="paper-article">
             <template v-for="(block, i) in article.blocks" :key="i">
               <p v-if="block.type === 'lead'" class="paper-article__lead" v-html="renderInlineMarkdown(block.text)"></p>
-              <h2 v-else-if="block.type === 'h2'" class="paper-article__h2">
+              <h2 v-else-if="block.type === 'h2'" :id="getHeadingId(i)" class="paper-article__h2">
                 <span class="paper-article__h2-bar paper-article__h2-bar--primary"></span>
                 <span v-html="renderInlineMarkdown(block.text)"></span>
               </h2>
@@ -232,6 +219,10 @@ function getCodeChoice(block, i) {
   return normalizeLang(block?.lang)
 }
 
+function getHeadingId(i) {
+  return `paper-heading-${i}`
+}
+
 function highlightCode(block, i) {
   const code = typeof block?.code === 'string' ? block.code : ''
   const choice = getCodeChoice(block, i)
@@ -291,7 +282,7 @@ function animateArticle() {
 
   articleAnimCtx = gsap.context(() => {
     if (prefersReducedMotion()) {
-      gsap.set('.article-topbar, .paper-hero, .paper-hero__img, .paper-hero__pill, .paper-hero__title, .paper-hero__author, .paper-hero__actions, .paper-card, .paper-article > *, .paper-share', {
+      gsap.set('.paper-hero, .paper-hero__img, .paper-hero__pill, .paper-hero__title, .paper-hero__author, .paper-hero__actions, .paper-card, .paper-article > *, .paper-share', {
         autoAlpha: 1,
         y: 0,
         scale: 1,
@@ -300,8 +291,7 @@ function animateArticle() {
     }
 
     const tl = gsap.timeline({ defaults: { duration: 0.72, ease: 'power3.out' } })
-    tl.from('.article-topbar', { autoAlpha: 0, y: -12, duration: 0.45 })
-      .from('.paper-hero', { autoAlpha: 0, y: 28, scale: 0.985 }, '<0.05')
+    tl.from('.paper-hero', { autoAlpha: 0, y: 28, scale: 0.985 })
       .from('.paper-hero__img', { scale: 1.08, duration: 1.1, ease: 'power2.out' }, '<')
       .from('.paper-hero__pill', { autoAlpha: 0, y: 14 }, '<0.18')
       .from('.paper-hero__title', { autoAlpha: 0, y: 26 }, '<0.08')
@@ -384,18 +374,6 @@ async function onDeleteArticle() {
 
 .paper-loading__text {
   @apply text-on-surface-variant;
-}
-
-.article-topbar {
-  @apply max-w-7xl mx-auto w-full px-4 md:px-8 mb-5 pt-2;
-}
-
-.article-back-home {
-  @apply inline-flex items-center gap-1.5 text-sm font-semibold text-sky-600 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-200 transition-colors no-underline rounded-full py-2 pl-1 pr-3 hover:bg-sky-50/80 dark:hover:bg-slate-800/60;
-}
-
-.article-back-home__icon {
-  @apply text-xl;
 }
 
 .paper-hero {
@@ -511,6 +489,7 @@ async function onDeleteArticle() {
 
 .paper-article__h2 {
   @apply text-2xl font-bold text-sky-900 mt-12 mb-4 flex items-center;
+  scroll-margin-top: 6rem;
 }
 
 .paper-article__h2-bar {
