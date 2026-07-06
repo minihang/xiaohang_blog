@@ -1,5 +1,11 @@
 <template>
   <aside v-if="isArticleRoute" class="side-nav side-nav--toc">
+    <a class="side-nav__toc-back" :href="homeHref" @click.prevent="onBackHome">
+      <span class="material-symbols-outlined">arrow_back</span>
+      <span>返回首页</span>
+    </a>
+    <div class="side-nav__toc-divider" aria-hidden="true"></div>
+
     <div class="side-nav__toc-head">
       <span class="material-symbols-outlined side-nav__toc-icon">toc</span>
       <div class="side-nav__toc-title-wrap">
@@ -22,10 +28,6 @@
       <p v-else-if="tocItems.length === 0" class="side-nav__toc-empty">暂无目录</p>
     </nav>
 
-    <RouterLink class="side-nav__toc-back" :to="{ name: 'home' }">
-      <span class="material-symbols-outlined">arrow_back</span>
-      <span>返回首页</span>
-    </RouterLink>
   </aside>
 
   <aside v-else class="side-nav">
@@ -111,19 +113,21 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '../stores/auth'
 import { resolveAssetUrl } from '../utils/assetUrl'
 import { fetchArticleById } from '../api/articles'
 
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 const { isLoggedIn, user } = storeToRefs(auth)
 const tocArticle = ref(null)
 const tocLoading = ref(false)
 
 const isArticleRoute = computed(() => route.name === 'article')
+const homeHref = computed(() => router.resolve({ name: 'home' }).href)
 
 const tocTitle = computed(() => {
   const title = tocArticle.value?.title
@@ -182,6 +186,19 @@ function onTocClick(event) {
   event.preventDefault()
   target.scrollIntoView({ behavior: 'smooth', block: 'start' })
   window.history.replaceState(null, '', `#${targetId}`)
+}
+
+function onBackHome() {
+  const previousLocation = window.history.state?.back
+  if (typeof previousLocation === 'string') {
+    const previousUrl = new URL(previousLocation, window.location.origin)
+    const homePath = router.resolve({ name: 'home' }).path
+    if (previousUrl.pathname === homePath) {
+      router.back()
+      return
+    }
+  }
+  router.push({ name: 'home' })
 }
 
 watch(
@@ -245,7 +262,11 @@ watch(
 }
 
 .side-nav__toc-back {
-  @apply flex items-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-sky-700 no-underline hover:bg-sky-100/70 transition-colors border-t border-sky-100;
+  @apply flex w-full items-center gap-2 px-3 py-3 text-sm font-bold text-sky-700 no-underline hover:text-sky-900 hover:translate-x-1 transition-all duration-300;
+}
+
+.side-nav__toc-divider {
+  @apply h-px bg-sky-100;
 }
 
 .side-nav__profile {
