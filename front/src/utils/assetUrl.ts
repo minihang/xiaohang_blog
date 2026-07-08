@@ -1,5 +1,5 @@
 /** 将站内上传路径（如 /uploads/...）拼成完整 URL；外链原样返回 */
-export function resolveAssetUrl(url) {
+export function resolveAssetUrl(url: unknown): string {
   if (!url || typeof url !== 'string') return ''
   if (/^https?:\/\//i.test(url)) return url
   const path = url.startsWith('/') ? url : `/${url}`

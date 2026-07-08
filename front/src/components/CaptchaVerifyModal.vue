@@ -63,26 +63,34 @@
   </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { checkCaptchaAnswer, createCaptchaChallenge } from '../utils/simpleCaptcha'
 
-const props = defineProps({
-  modelValue: { type: Boolean, default: false },
-  title: { type: String, default: '安全验证' },
-  description: { type: String, default: '请完成下列算式。' },
-  confirmText: { type: String, default: '确认' },
-  /** Material Symbols 图标名，不含后缀 */
-  confirmIcon: { type: String, default: 'check' },
+const props = withDefaults(defineProps<{
+  modelValue?: boolean
+  title?: string
+  description?: string
+  confirmText?: string
+  confirmIcon?: string
+}>(), {
+  modelValue: false,
+  title: '安全验证',
+  description: '请完成下列算式。',
+  confirmText: '确认',
+  confirmIcon: 'check',
 })
 
-const emit = defineEmits(['update:modelValue', 'verified'])
+const emit = defineEmits<{
+  'update:modelValue': [value: boolean]
+  verified: []
+}>()
 
 const titleId = `captcha-modal-title-${Math.random().toString(36).slice(2, 9)}`
 
 const captcha = ref(createCaptchaChallenge())
 const captchaInput = ref('')
-const captchaInputEl = ref(null)
+const captchaInputEl = ref<HTMLInputElement | null>(null)
 const captchaModalError = ref('')
 
 function newCaptcha() {
@@ -120,7 +128,7 @@ watch(
   },
 )
 
-function onEscape(e) {
+function onEscape(e: KeyboardEvent) {
   if (e.key === 'Escape' && props.modelValue) close()
 }
 

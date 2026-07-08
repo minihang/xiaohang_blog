@@ -1,4 +1,4 @@
-function escapeHtml(s) {
+function escapeHtml(s: unknown): string {
   return String(s)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -7,7 +7,7 @@ function escapeHtml(s) {
     .replace(/'/g, '&#39;')
 }
 
-function sanitizeHref(escapedHref) {
+function sanitizeHref(escapedHref: unknown): string {
   const href = String(escapedHref || '').trim()
   if (!href) return '#'
   const decoded = href.replace(/&amp;/g, '&').trim().toLowerCase()
@@ -20,12 +20,17 @@ function sanitizeHref(escapedHref) {
  * - 不支持跨行反引号
  * - 若反引号不成对，会按普通文本显示
  */
-export function renderInlineMarkdown(text) {
+interface LinkPart {
+  label: string
+  href: string
+}
+
+export function renderInlineMarkdown(text: unknown): string {
   const raw = String(text ?? '')
   const escaped = escapeHtml(raw)
 
   // 先把 `code` 取出成占位，避免对 code 内部再做其他替换
-  const codeParts = []
+  const codeParts: string[] = []
   const withPlaceholders = escaped.replace(/`([^`\n]+?)`/g, (_m, inner) => {
     const idx = codeParts.length
     codeParts.push(inner)
@@ -33,7 +38,7 @@ export function renderInlineMarkdown(text) {
   })
 
   // [text](url)
-  const linkParts = []
+  const linkParts: LinkPart[] = []
   const withLinkPlaceholders = withPlaceholders.replace(/\[([^\]\n]+?)\]\(([^)\n]+?)\)/g, (_m, label, href) => {
     const idx = linkParts.length
     linkParts.push({ label, href: sanitizeHref(href) })

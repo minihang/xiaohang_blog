@@ -1,7 +1,9 @@
-/** 与侧栏 `SideNavBar` 一致：ALL=全部；其余为 category 筛选 */
-export const ARTICLE_CATEGORIES = ['随笔', '科研', '开发']
+import type { Article, ArticleCategory } from '../types'
 
-const IMG = {
+/** 与侧栏 `SideNavBar` 一致：ALL=全部；其余为 category 筛选 */
+export const ARTICLE_CATEGORIES: ArticleCategory[] = ['随笔', '科研', '开发']
+
+const IMG: Record<string, string> = {
   a: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBeRAMTzAqCb_TyOFpZHn0IG8ul75F7H4HTLAeOdXsm-lqBIKeW37_infNcjD9VRB11ak6ZC8zzmOxvBJ9Rok1GrWQuMzPczjSTd1AvsFGPwJag8blntOqsOMrxWAG898_fc_l3Uxi8eARkweAe2lq2LOpFmCL-WSgdTFv1rkqqXCAzhJq919h-We_Voh_yI2AfAg-lFYebFCPvcHkSkRT6S4k3J3hla3A62PpULBw1H00sRsf5FMPPQqfBhZ6BJGEF0GfGxv_l4vQ',
   b: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDgT14nq8yJQ4DrPwDFTsg8Ai9lhY772WZbqdXwHijYR3GzT-02H2HqJjYPl_ONQu8nTCyJHWtRzy7qrw4ivBvfPrHFoQ4sP3sjX1_tPPYEvnjqSEakGWEPJWvPpDfIV7RRspmhD93T_mlTtcOHVp4DkxTcIB8eAJ_2gbrf-AeTK5L8QTKPr2p6JPH2gQUNWwaedRGRN0eBOn6ef42PBf9G7XptwyqI8EF-5cf_aoTQh7GSF8dfYmqlUTGD1ovKrPIL8uPQmh8mPVc',
   c: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC5ugOjJ--xaCGF2ZE2eH-XXM-F6di8U0aEzYFdcS8V5M7nZN1-xj27rx1KQRJmFcCxP1wOL4pXkojX3owLdj__dE8nzQAD_hH0nojhcLXLZrDrHyY5gTfWsdr-3L1lV-ccrQJunxY1XLEH6MnF-YUlXrWju8aOyytFInNKhNhN7WGCsQx0sTLuVSGqef5SD-a7deG65E1MuqwHoBzXygMfrEw0tFxg-6F8NjANl6pukh1d6zOJ07fgcWCl4iqy7OzATLNpvYw_uNg',
@@ -11,7 +13,7 @@ const IMG = {
     'https://lh3.googleusercontent.com/aida-public/AB6AXuDw9DmboW4eFHqtZLNNSrjUxOT5BTO1PndnP2jPANrqu5NJSaK6Zk_pmzaz7gRmzFy9qPyblnLJd3avouAxjbQNYAS6geTLeZN3bXEhIuMWuE3ny1TsXrM3muEOVdR9WMKkeCebE4ZPlI7oBMQN85WqqxBrZclCXtGY7CYeik1178uvT6jnrGtGTjj5MbQpM2an4f7OTVMD1ytA8Kw-yE7ZLwkwFe1uTwMcSHSkZU5PXSHHXFQPSPMPGbH-I-VZBkOLCYi4yWXkfjE',
 }
 
-export const articles = [
+export const articles: Article[] = [
   {
     id: 1,
     category: '开发',

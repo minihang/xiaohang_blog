@@ -2,7 +2,13 @@ import axios from 'axios'
 
 const AUTH_STORAGE_KEY = 'blog_auth_v1'
 
-export function getStoredToken() {
+interface ApiErrorBody {
+  error?: string
+  message?: string
+  visibility?: unknown
+}
+
+export function getStoredToken(): string | null {
   try {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY)
     if (!raw) return null
@@ -28,3 +34,22 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
+
+export function getApiErrorData(error: unknown): ApiErrorBody {
+  if (axios.isAxiosError<ApiErrorBody>(error)) {
+    return error.response?.data ?? {}
+  }
+  return {}
+}
+
+export function getApiErrorStatus(error: unknown): number | undefined {
+  return axios.isAxiosError(error) ? error.response?.status : undefined
+}
+
+export function getApiErrorMessage(error: unknown, fallback: string): string {
+  const data = getApiErrorData(error)
+  if (typeof data.error === 'string' && data.error) return data.error
+  if (typeof data.message === 'string' && data.message) return data.message
+  if (error instanceof Error && error.message) return error.message
+  return fallback
+}

@@ -93,7 +93,7 @@
                   <label class="paper-code__picker">
                     <span class="paper-code__picker-label">语言</span>
                     <select class="paper-code__select" :value="getCodeChoice(block, i)"
-                      @change="(e) => (codeLangChoiceByIndex[i] = e.target.value)">
+                      @change="onCodeLangChange(i, $event)">
                       <option v-for="opt in CODE_LANG_OPTIONS" :key="opt.value" :value="opt.value">
                         {{ opt.label }}
                       </option>
@@ -149,7 +149,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -161,22 +161,24 @@ import { renderInlineMarkdown } from '../utils/inlineCode'
 import { resolveAssetUrl } from '../utils/assetUrl'
 import { useAuthStore } from '../stores/auth'
 import { deleteArticle, fetchArticleById, likeArticle } from '../api/articles'
+import { getApiErrorMessage } from '../api/http'
 import { canReadArticleBody } from '../utils/articleAccess'
+import type { ArticleBlock, ArticleDetailResponse } from '../types'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const { isLoggedIn, isAdmin } = storeToRefs(authStore)
 
-const article = ref(null)
+const article = ref<ArticleDetailResponse>(null)
 const articleLoading = ref(true)
 const loadError = ref('')
 const likeSubmitting = ref(false)
-const articleRoot = ref(null)
+const articleRoot = ref<HTMLElement | null>(null)
 
-let articleAnimCtx
+let articleAnimCtx: ReturnType<typeof gsap.context> | null = null
 
-function prefersReducedMotion() {
+function prefersReducedMotion(): boolean {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 }
 
@@ -198,32 +200,32 @@ const CODE_LANG_OPTIONS = [
   { value: 'yaml', label: 'YAML' },
 ]
 
-const codeLangChoiceByIndex = ref({})
+const codeLangChoiceByIndex = ref<Record<number, string>>({})
 
-function normalizeLang(raw) {
+function normalizeLang(raw: unknown): string {
   const v = String(raw || '').trim().toLowerCase()
   if (!v) return 'auto'
   if (v === 'auto') return 'auto'
   return v
 }
 
-function resolveHighlightLang(lang) {
+function resolveHighlightLang(lang: unknown): string {
   const v = normalizeLang(lang)
   if (v === 'vue' || v === 'vuejs') return 'xml'
   return v
 }
 
-function getCodeChoice(block, i) {
+function getCodeChoice(block: ArticleBlock, i: number): string {
   const picked = codeLangChoiceByIndex.value?.[i]
   if (picked != null && picked !== '') return normalizeLang(picked)
   return normalizeLang(block?.lang)
 }
 
-function getHeadingId(i) {
+function getHeadingId(i: number): string {
   return `paper-heading-${i}`
 }
 
-function highlightCode(block, i) {
+function highlightCode(block: ArticleBlock, i: number): { html: string; detected: string } {
   const code = typeof block?.code === 'string' ? block.code : ''
   const choice = getCodeChoice(block, i)
   if (!code) return { html: '', detected: '' }
@@ -244,7 +246,7 @@ function highlightCode(block, i) {
   return { html: res.value, detected: res.language || '' }
 }
 
-function formatLikeCount(n) {
+function formatLikeCount(n: unknown): string {
   const x = Number(n) || 0
   if (x >= 1_000_000) return `${(x / 1_000_000).toFixed(1)}M`
   if (x >= 10_000) return `${Math.round(x / 1000)}k`
@@ -253,6 +255,11 @@ function formatLikeCount(n) {
 }
 
 const displayLikeCount = computed(() => formatLikeCount(article.value?.likeCount))
+
+function onCodeLangChange(index: number, event: Event) {
+  const select = event.target as HTMLSelectElement | null
+  if (select) codeLangChoiceByIndex.value[index] = select.value
+}
 
 watch(
   () => route.params.id,
@@ -264,10 +271,15 @@ watch(
     articleLoading.value = true
     codeLangChoiceByIndex.value = {}
     try {
-      const data = await fetchArticleById(id)
+      const articleId = Array.isArray(id) ? id[0] : id
+      if (!articleId) {
+        article.value = null
+        return
+      }
+      const data = await fetchArticleById(articleId)
       article.value = data
     } catch (e) {
-      loadError.value = String(e?.message || '加载失败')
+      loadError.value = getApiErrorMessage(e, '加载失败')
     } finally {
       articleLoading.value = false
       await nextTick()
@@ -278,7 +290,8 @@ watch(
 )
 
 function animateArticle() {
-  if (!articleRoot.value || !article.value) return
+  const root = articleRoot.value
+  if (!root || !article.value) return
 
   articleAnimCtx = gsap.context(() => {
     if (prefersReducedMotion()) {
@@ -324,7 +337,7 @@ function animateArticle() {
       },
     })
     ScrollTrigger.refresh()
-  }, articleRoot.value)
+  }, root)
 }
 
 onUnmounted(() => {
@@ -333,7 +346,7 @@ onUnmounted(() => {
 
 const canRead = computed(() => {
   const a = article.value
-  if (!a) return false
+  if (!a || a.forbidden) return false
   return canReadArticleBody(a.visibility, {
     isLoggedIn: isLoggedIn.value,
     isAdmin: isAdmin.value,
@@ -342,13 +355,13 @@ const canRead = computed(() => {
 
 async function onLike() {
   const a = article.value
-  if (!a?.id || likeSubmitting.value) return
+  if (!a || a.forbidden || !a.id || likeSubmitting.value) return
   likeSubmitting.value = true
   try {
     const { likeCount } = await likeArticle(a.id)
     article.value = { ...a, likeCount }
   } catch (e) {
-    window.alert(String(e?.response?.data?.error || e?.message || '点赞失败'))
+    window.alert(getApiErrorMessage(e, '点赞失败'))
   } finally {
     likeSubmitting.value = false
   }
@@ -356,13 +369,13 @@ async function onLike() {
 
 async function onDeleteArticle() {
   const a = article.value
-  if (!a?.id) return
+  if (!a || a.forbidden || !a.id) return
   if (!window.confirm(`确定删除文章「${a.title}」？此操作不可恢复。`)) return
   try {
     await deleteArticle(a.id)
     router.replace({ name: 'home' })
   } catch (e) {
-    window.alert(String(e?.response?.data?.error || e?.message || '删除失败'))
+    window.alert(getApiErrorMessage(e, '删除失败'))
   }
 }
 </script>

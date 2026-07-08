@@ -115,7 +115,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -123,8 +123,10 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useAuthStore } from '../stores/auth'
 import { deleteMessage, fetchMessageList, postMessage } from '../api/messages'
+import { getApiErrorMessage } from '../api/http'
 import { resolveAssetUrl } from '../utils/assetUrl'
 import CaptchaVerifyModal from '../components/CaptchaVerifyModal.vue'
+import type { Id, Message } from '../types'
 
 const auth = useAuthStore()
 const { canDeleteMessage, isLoggedIn, user } = storeToRefs(auth)
@@ -148,30 +150,34 @@ watch(
   { immediate: true },
 )
 
-/** @type {import('vue').Ref<{ id: string; authorName: string } | null>} */
-const replyingTo = ref(null)
-const messageRoot = ref(null)
-const messageFormCardEl = ref(null)
-const contentTextareaEl = ref(null)
+interface ReplyTarget {
+  id: Id
+  authorName: string
+}
 
-let pageAnimCtx
-let messageListCtx
-const animatedMessageIds = new Set()
+const replyingTo = ref<ReplyTarget | null>(null)
+const messageRoot = ref<HTMLElement | null>(null)
+const messageFormCardEl = ref<HTMLElement | null>(null)
+const contentTextareaEl = ref<HTMLTextAreaElement | null>(null)
 
-function prefersReducedMotion() {
+let pageAnimCtx: ReturnType<typeof gsap.context> | null = null
+let messageListCtx: ReturnType<typeof gsap.context> | null = null
+const animatedMessageIds = new Set<string>()
+
+function prefersReducedMotion(): boolean {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 }
 
-function escapeRegExp(s) {
+function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 /** 去掉首行「回复 @某人：」后是否还有正文 */
-function getEffectiveMessageBody(text) {
+function getEffectiveMessageBody(text: string): string {
   return text.replace(/^回复 @[^:]+:\n/, '').trim()
 }
 
-function beginReply(msg) {
+function beginReply(msg: Message) {
   const authorName = msg.authorName
   const prefix = `回复 @${authorName}：\n`
   let next = content.value
@@ -229,7 +235,7 @@ function clearReplyTarget() {
  * 仅管理员可删（按钮已 v-if，此处再校验防误触）
  * @param {{ id: string; authorName: string }} msg
  */
-async function removeMessage(msg) {
+async function removeMessage(msg: Message) {
   if (!canDeleteMessage.value) return
   const ok = window.confirm(
     `确定删除「${msg.authorName}」的这条留言吗？此操作不可撤销。`,
@@ -242,7 +248,7 @@ async function removeMessage(msg) {
     totalCount.value = Math.max(0, totalCount.value - 1)
     if (replyingTo.value?.id === id) clearReplyTarget()
   } catch (e) {
-    window.alert(String(e?.message || '删除失败'))
+    window.alert(getApiErrorMessage(e, '删除失败'))
   }
 }
 
@@ -250,7 +256,7 @@ function openCaptchaModal() {
   showCaptchaModal.value = true
 }
 
-const messages = ref([])
+const messages = ref<Message[]>([])
 const nextCursor = ref(0)
 const totalCount = ref(0)
 const listLoading = ref(false)
@@ -267,7 +273,7 @@ async function loadInitial() {
   } catch (e) {
     messages.value = []
     totalCount.value = 0
-    window.alert(String(e?.message || '留言加载失败，请确认已启动后端 serve'))
+    window.alert(getApiErrorMessage(e, '留言加载失败，请确认已启动后端 serve'))
   } finally {
     listLoading.value = false
   }
@@ -287,7 +293,8 @@ async function loadMore() {
 }
 
 onMounted(() => {
-  if (messageRoot.value) {
+  const root = messageRoot.value
+  if (root) {
     pageAnimCtx = gsap.context(() => {
       if (prefersReducedMotion()) return
 
@@ -297,16 +304,17 @@ onMounted(() => {
         .from('.message-header__subtitle', { autoAlpha: 0, y: 16 }, '<0.1')
         .from('.message-form-card', { autoAlpha: 0, y: 26, scale: 0.985 }, '<0.16')
         .from('.message-wall__header', { autoAlpha: 0, y: 16 }, '<0.1')
-    }, messageRoot.value)
-    messageListCtx = gsap.context(() => {}, messageRoot.value)
+    }, root)
+    messageListCtx = gsap.context(() => {}, root)
   }
   loadInitial()
 })
 
 function animatePendingMessageCards() {
-  if (!messageRoot.value) return
+  const root = messageRoot.value
+  if (!root) return
 
-  const cards = Array.from(messageRoot.value.querySelectorAll('.message-card'))
+  const cards = Array.from(root.querySelectorAll<HTMLElement>('.message-card'))
   const pendingCards = cards.filter((card) => {
     const id = card.dataset.messageId
     return id && !animatedMessageIds.has(id)
@@ -314,7 +322,10 @@ function animatePendingMessageCards() {
 
   if (pendingCards.length === 0) return
 
-  pendingCards.forEach((card) => animatedMessageIds.add(card.dataset.messageId))
+  pendingCards.forEach((card) => {
+    const id = card.dataset.messageId
+    if (id) animatedMessageIds.add(id)
+  })
 
   if (prefersReducedMotion()) {
     gsap.set(pendingCards, {
@@ -404,7 +415,7 @@ async function confirmCaptchaAndSend() {
     messages.value = [created, ...messages.value]
     totalCount.value += 1
   } catch (e) {
-    submitError.value = String(e?.message || '发送失败')
+    submitError.value = getApiErrorMessage(e, '发送失败')
     return
   }
 

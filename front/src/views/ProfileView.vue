@@ -79,10 +79,11 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { fetchProfile, updateProfile, uploadAvatar } from '../api/profile'
+import { getApiErrorMessage } from '../api/http'
 import { resolveAssetUrl } from '../utils/assetUrl'
 
 const auth = useAuthStore()
@@ -120,7 +121,7 @@ async function load() {
     auth.applyUser(data.user)
     syncFormFromStore()
   } catch (e) {
-    loadError.value = String(e?.response?.data?.error || e?.message || '加载失败')
+    loadError.value = getApiErrorMessage(e, '加载失败')
   } finally {
     loading.value = false
   }
@@ -154,14 +155,14 @@ async function onSaveProfile() {
       saveOk.value = ''
     }, 2500)
   } catch (e) {
-    saveError.value = String(e?.response?.data?.error || e?.message || '保存失败')
+    saveError.value = getApiErrorMessage(e, '保存失败')
   } finally {
     saving.value = false
   }
 }
 
-async function onAvatarFile(ev) {
-  const input = ev.target
+async function onAvatarFile(ev: Event) {
+  const input = ev.target as HTMLInputElement | null
   const file = input?.files?.[0]
   if (input) input.value = ''
   if (!file) return
@@ -175,7 +176,7 @@ async function onAvatarFile(ev) {
       avatarOk.value = ''
     }, 2500)
   } catch (e) {
-    avatarError.value = String(e?.response?.data?.error || e?.message || '上传失败')
+    avatarError.value = getApiErrorMessage(e, '上传失败')
   }
 }
 </script>

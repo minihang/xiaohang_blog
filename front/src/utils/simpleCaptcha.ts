@@ -5,7 +5,14 @@
 /**
  * @returns {{ a: number; b: number; answer: number; prompt: string }}
  */
-export function createCaptchaChallenge() {
+export interface CaptchaChallenge {
+  a: number
+  b: number
+  answer: number
+  prompt: string
+}
+
+export function createCaptchaChallenge(): CaptchaChallenge {
   const a = 1 + Math.floor(Math.random() * 9)
   const b = 1 + Math.floor(Math.random() * 9)
   return {
@@ -20,7 +27,7 @@ export function createCaptchaChallenge() {
  * @param {string | number} input
  * @param {number} expected
  */
-export function checkCaptchaAnswer(input, expected) {
+export function checkCaptchaAnswer(input: string | number, expected: number): boolean {
   const n = Number(String(input).trim())
   return Number.isFinite(n) && n === expected
 }

@@ -1,6 +1,20 @@
 import { createVNode, reactive, render } from 'vue'
 import ToastContainer from '../components/ToastContainer.vue'
 
+export type ToastType = 'success' | 'error' | 'info'
+
+export interface ToastItem {
+  id: string
+  message: string
+  type: ToastType
+}
+
+export interface ToastOptions {
+  type?: ToastType
+  duration?: number
+  throttleMs?: number
+}
+
 /**
  * 创建 Toast 的状态与操作方法。
  *
@@ -10,20 +24,20 @@ import ToastContainer from '../components/ToastContainer.vue'
  */
 function createToastStore() {
   // 响应式状态：ToastContainer 会订阅它并自动更新视图。
-  const state = reactive({
+  const state = reactive<{ items: ToastItem[] }>({
     // 当前正在展示的 toast 队列。
     // 每项结构：{ id, message, type }
     items: [],
   })
   // 用于节流去重：记录“同类型同文案”上一次显示时间。
   // key 形如：success:内容已缓存
-  const lastShownAtByKey = new Map()
+  const lastShownAtByKey = new Map<string, number>()
 
   /**
    * 按 id 移除某条 toast（供自动关闭或手动关闭调用）。
    * @param {string} id
    */
-  function remove(id) {
+  function remove(id: string) {
     const idx = state.items.findIndex((it) => it.id === id)
     if (idx >= 0) state.items.splice(idx, 1)
   }
@@ -39,11 +53,11 @@ function createToastStore() {
    * }} [options]
    * @returns {string|null} 成功显示返回 id；命中节流则返回 null
    */
-  function show(message, options = {}) {
+  function show(message: string, options: ToastOptions = {}): string | null {
     // 生成每条 toast 的唯一 id（用于渲染 key 与后续删除）。
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     // 类型默认 success。
-    const type = options.type || 'success'
+    const type: ToastType = options.type || 'success'
     // 默认展示 1.8 秒。
     const duration = Number.isFinite(options.duration) ? Number(options.duration) : 1800
     // 文案统一转字符串，避免传入非字符串导致渲染异常。
@@ -73,17 +87,19 @@ function createToastStore() {
     show,
     remove,
     // 语义化快捷方法：success / error / info
-    success(message, options = {}) {
+    success(message: string, options: Omit<ToastOptions, 'type'> = {}) {
       return show(message, { ...options, type: 'success' })
     },
-    error(message, options = {}) {
+    error(message: string, options: Omit<ToastOptions, 'type'> = {}) {
       return show(message, { ...options, type: 'error' })
     },
-    info(message, options = {}) {
+    info(message: string, options: Omit<ToastOptions, 'type'> = {}) {
       return show(message, { ...options, type: 'info' })
     },
   }
 }
+
+export type ToastStore = ReturnType<typeof createToastStore>
 
 // 全局单例：整个前端应用生命周期里只创建一次 store。
 const toastStore = createToastStore()
@@ -95,7 +111,7 @@ const toastStore = createToastStore()
  */
 export function createToastPlugin() {
   return {
-    install() {
+    install(): void {
       // 防止重复安装导致重复挂载（例如某些热更新场景）。
       if (document.getElementById('global-toast-root')) return
       const mountEl = document.createElement('div')
@@ -113,6 +129,6 @@ export function createToastPlugin() {
  * const toast = useToast()
  * toast.success('内容已缓存')
  */
-export function useToast() {
+export function useToast(): ToastStore {
   return toastStore
 }

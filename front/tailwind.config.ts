@@ -1,8 +1,8 @@
 import typography from '@tailwindcss/typography'
+import type { Config } from 'tailwindcss'
 
-/** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{vue,js}'],
+  content: ['./index.html', './src/**/*.{vue,ts}'],
   darkMode: 'class',
   theme: {
     extend: {
@@ -73,5 +73,5 @@ export default {
     },
   },
   plugins: [typography],
-}
+} satisfies Config
 

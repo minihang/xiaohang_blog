@@ -5,7 +5,7 @@ import { api } from './http'
  * @param {File} file
  * @returns {Promise<{ url: string }>}
  */
-export async function uploadArticleImage(file) {
+export async function uploadArticleImage(file: File): Promise<{ url: string }> {
   const fd = new FormData()
   fd.append('image', file)
   const { data } = await api.post('/api/uploads/article-image', fd)

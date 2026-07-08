@@ -197,7 +197,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -205,12 +205,47 @@ import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
 import { ARTICLE_CATEGORIES } from '../data/articles'
 import { createArticle, fetchArticleById, updateArticle } from '../api/articles'
+import { getApiErrorMessage } from '../api/http'
 import { uploadArticleImage } from '../api/uploads'
 import { useAuthStore } from '../stores/auth'
 import { useToast } from '../plugins/toast'
 import { blocksToPaperMarkdown, parsePaperMarkdown } from '../utils/paperMarkdown'
 import { renderInlineMarkdown } from '../utils/inlineCode'
 import { resolveAssetUrl } from '../utils/assetUrl'
+import type { ArticleBlock, ArticleCategory, ArticleVisibility, Id } from '../types'
+
+type CropTarget = 'cover' | 'hero'
+type CropDragMode = 'move' | 'nw' | 'ne' | 'sw' | 'se'
+
+interface CropBox {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+interface CropImageRect extends CropBox {
+  scale: number
+}
+
+interface CropDragStart {
+  x: number
+  y: number
+  rect: CropBox
+}
+
+interface ArticlePayload extends Record<string, unknown> {
+  category: ArticleCategory
+  visibility: ArticleVisibility
+  date: string
+  title: string
+  excerpt: string
+  authorName: string
+  authorPublished: string
+  blocks: ArticleBlock[]
+  imageUrl: string
+  heroImage: string
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -220,8 +255,8 @@ const toast = useToast()
 
 const isNew = computed(() => route.name === 'edit-new')
 
-const category = ref('随笔')
-const visibility = ref('public')
+const category = ref<ArticleCategory>('随笔')
+const visibility = ref<ArticleVisibility>('public')
 const date = ref('')
 const datePicker = ref('')
 const title = ref('')
@@ -229,33 +264,37 @@ const excerpt = ref('')
 const imageUrl = ref('')
 const heroImage = ref('')
 const blocksMd = ref('')
-const mdEl = ref(null)
+const mdEl = ref<HTMLTextAreaElement | null>(null)
 const isPreview = ref(false)
 
-const coverInputEl = ref(null)
-const heroInputEl = ref(null)
+const coverInputEl = ref<HTMLInputElement | null>(null)
+const heroInputEl = ref<HTMLInputElement | null>(null)
 
 const cropOpen = ref(false)
-const cropTarget = ref('cover') // 'cover' | 'hero'
+const cropTarget = ref<CropTarget>('cover')
 const cropLoading = ref(false)
 const cropError = ref('')
-const cropImgEl = ref(null)
-const cropViewportEl = ref(null)
+const cropImgEl = ref<HTMLImageElement | null>(null)
+const cropViewportEl = ref<HTMLElement | null>(null)
 const cropObjectUrl = ref('')
 
 const cropReady = ref(false)
-const cropImgRect = ref({ x: 0, y: 0, w: 1, h: 1, scale: 1 })
-const cropRect = ref({ x: 0, y: 0, w: 1, h: 1 })
+const cropImgRect = ref<CropImageRect>({ x: 0, y: 0, w: 1, h: 1, scale: 1 })
+const cropRect = ref<CropBox>({ x: 0, y: 0, w: 1, h: 1 })
 const cropDragging = ref(false)
-const cropDragMode = ref('move') // move | nw | ne | sw | se
-let cropDragStart = null
+const cropDragMode = ref<CropDragMode>('move')
+let cropDragStart: CropDragStart | null = null
 
-const DEFAULT_IMAGE_BY_CAT = {
+const DEFAULT_IMAGE_BY_CAT: Record<ArticleCategory, string> = {
   随笔: '/pictures/suibi.png',
   科研: '/pictures/keyan.jpg',
   开发: '/pictures/kaifa.png',
 }
 const DEFAULT_HERO = '/pictures/xiangqing.png'
+
+function isArticleCategory(value: unknown): value is ArticleCategory {
+  return ARTICLE_CATEGORIES.includes(value as ArticleCategory)
+}
 
 const loading = ref(false)
 const saving = ref(false)
@@ -263,8 +302,14 @@ const loadError = ref('')
 const saveError = ref('')
 const mdError = ref('')
 
-function draftStorageKey() {
-  return isNew.value ? 'article-edit-draft:new' : `article-edit-draft:${String(route.params.id || '')}`
+function currentRouteId(): Id | null {
+  const id = route.params.id
+  if (Array.isArray(id)) return id[0] || null
+  return id || null
+}
+
+function draftStorageKey(): string {
+  return isNew.value ? 'article-edit-draft:new' : `article-edit-draft:${String(currentRouteId() || '')}`
 }
 
 function cacheDraftToLocalStorage() {
@@ -284,13 +329,13 @@ function cacheDraftToLocalStorage() {
   toast.success('内容已缓存')
 }
 
-const previewBlocks = computed(() => {
+const previewBlocks = computed<ArticleBlock[]>(() => {
   const res = parsePaperMarkdown(blocksMd.value)
   mdError.value = res.error ? String(res.error) : ''
   return res.blocks || []
 })
 
-function autoResizeMd() {
+function autoResizeMd(): void {
   const el = mdEl.value
   if (!el) return
   // reset then grow to content height
@@ -324,7 +369,7 @@ function autoResizeMd() {
   }
 }
 
-async function onMdPaste(e) {
+async function onMdPaste(e: ClipboardEvent) {
   const el = mdEl.value
   const items = e?.clipboardData?.items
   if (!el || !items || items.length === 0) return
@@ -345,7 +390,7 @@ async function onMdPaste(e) {
   await insertImageToMarkdown(file, el)
 }
 
-async function insertImageToMarkdown(file, el) {
+async function insertImageToMarkdown(file: File, el: HTMLTextAreaElement) {
   try {
     const { url } = await uploadArticleImage(file)
     const start = el.selectionStart ?? 0
@@ -360,11 +405,11 @@ async function insertImageToMarkdown(file, el) {
       autoResizeMd()
     })
   } catch (err) {
-    window.alert(String(err?.response?.data?.error || err?.message || '图片上传失败'))
+    window.alert(getApiErrorMessage(err, '图片上传失败'))
   }
 }
 
-async function onMdDrop(e) {
+async function onMdDrop(e: DragEvent) {
   const el = mdEl.value
   const files = e?.dataTransfer?.files
   if (!el || !files || files.length === 0) return
@@ -378,16 +423,19 @@ async function onMdDrop(e) {
   await insertImageToMarkdown(file, el)
 }
 
-function onMdDragOver(e) {
+function onMdDragOver(e: DragEvent) {
   const el = mdEl.value
   if (!el) return
   e.preventDefault()
   setTextareaCaretFromPoint(el, e.clientX, e.clientY)
 }
 
-function setTextareaCaretFromPoint(el, clientX, clientY) {
-  const doc = el?.ownerDocument || document
-  let idx = null
+function setTextareaCaretFromPoint(el: HTMLTextAreaElement, clientX: number, clientY: number) {
+  const doc = (el.ownerDocument || document) as Document & {
+    caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null
+    caretRangeFromPoint?: (x: number, y: number) => Range | null
+  }
+  let idx: number | null = null
 
   if (typeof doc.caretPositionFromPoint === 'function') {
     const pos = doc.caretPositionFromPoint(clientX, clientY)
@@ -440,7 +488,7 @@ function cleanupCropper() {
   }
 }
 
-function startCrop(file, target) {
+function startCrop(file: File, target: CropTarget) {
   cleanupCropper()
   cropTarget.value = target
   cropError.value = ''
@@ -482,7 +530,7 @@ function onCropImgLoad() {
   cropReady.value = true
 }
 
-function clampCropRect(next) {
+function clampCropRect(next: CropBox): CropBox {
   const r = cropImgRect.value
   const minX = r.x
   const minY = r.y
@@ -495,11 +543,11 @@ function clampCropRect(next) {
   }
 }
 
-function aspectValue() {
+function aspectValue(): number {
   return cropTarget.value === 'hero' ? 1260 / 500 : 1
 }
 
-function onCropHandleDown(e, mode) {
+function onCropHandleDown(e: PointerEvent, mode: CropDragMode) {
   if (!cropReady.value) return
   e.preventDefault()
   cropDragging.value = true
@@ -509,10 +557,10 @@ function onCropHandleDown(e, mode) {
     y: e.clientY,
     rect: { ...cropRect.value },
   }
-  e.currentTarget?.setPointerCapture?.(e.pointerId)
+  ;(e.currentTarget as HTMLElement | null)?.setPointerCapture?.(e.pointerId)
 }
 
-function onCropHandleMove(e) {
+function onCropHandleMove(e: PointerEvent) {
   if (!cropDragging.value || !cropDragStart) return
   const dx = e.clientX - cropDragStart.x
   const dy = e.clientY - cropDragStart.y
@@ -533,7 +581,7 @@ function onCropHandleMove(e) {
   let next = { ...start }
   const r = cropImgRect.value
 
-  const applySize = (w, h, anchorX, anchorY) => {
+  const applySize = (w: number, h: number, anchorX: number, anchorY: number) => {
     next.w = Math.max(minSize, w)
     next.h = Math.max(minSize / a, h)
     // clamp to image rect by shrinking if needed
@@ -585,18 +633,20 @@ function onCropHandleUp() {
   cropDragStart = null
 }
 
-function onPickCover(e) {
-  const file = e?.target?.files?.[0]
+function onPickCover(e: Event) {
+  const input = e.target as HTMLInputElement | null
+  const file = input?.files?.[0]
   if (!file) return
   startCrop(file, 'cover')
-  e.target.value = ''
+  if (input) input.value = ''
 }
 
-function onPickHero(e) {
-  const file = e?.target?.files?.[0]
+function onPickHero(e: Event) {
+  const input = e.target as HTMLInputElement | null
+  const file = input?.files?.[0]
   if (!file) return
   startCrop(file, 'hero')
-  e.target.value = ''
+  if (input) input.value = ''
 }
 
 async function confirmCrop() {
@@ -619,11 +669,12 @@ async function confirmCrop() {
     canvas.width = outW
     canvas.height = outH
     const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('裁切失败')
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = 'high'
     ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outW, outH)
 
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.92))
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png', 0.92))
     if (!blob) throw new Error('裁切失败')
     const file = new File([blob], `cropped-${Date.now()}.png`, { type: 'image/png' })
     const { url } = await uploadArticleImage(file)
@@ -632,7 +683,7 @@ async function confirmCrop() {
     cropOpen.value = false
     cleanupCropper()
   } catch (e) {
-    cropError.value = String(e?.response?.data?.error || e?.message || '上传失败')
+    cropError.value = getApiErrorMessage(e, '上传失败')
   } finally {
     cropLoading.value = false
   }
@@ -666,7 +717,7 @@ watch(
   },
 )
 
-function highlightPreviewCode(block) {
+function highlightPreviewCode(block: ArticleBlock): { html: string } {
   const code = typeof block?.code === 'string' ? block.code : ''
   const lang = typeof block?.lang === 'string' ? block.lang.trim() : ''
   if (!code) return { html: '' }
@@ -681,7 +732,7 @@ function highlightPreviewCode(block) {
   return { html: hljs.highlightAuto(code).value }
 }
 
-function todayText() {
+function todayText(): string {
   const d = new Date()
   const y = d.getFullYear()
   const m = d.getMonth() + 1
@@ -689,7 +740,7 @@ function todayText() {
   return `${y}.${String(m).padStart(2, '0')}.${String(day).padStart(2, '0')}`
 }
 
-function todayPickerValue() {
+function todayPickerValue(): string {
   const d = new Date()
   const y = d.getFullYear()
   const m = d.getMonth() + 1
@@ -697,13 +748,13 @@ function todayPickerValue() {
   return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
-function pickerToText(v) {
+function pickerToText(v: unknown): string {
   const m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})$/)
   if (!m) return ''
   return `${m[1]}.${m[2]}.${m[3]}`
 }
 
-function textToPicker(v) {
+function textToPicker(v: unknown): string {
   const s = String(v || '').trim()
   const a = s.match(/^(\d{4})\.(\d{2})\.(\d{2})$/)
   if (a) return `${a[1]}-${a[2]}-${a[3]}`
@@ -712,7 +763,7 @@ function textToPicker(v) {
   return ''
 }
 
-function publishedLineFromPicker(v) {
+function publishedLineFromPicker(v: unknown): string {
   const m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})$/)
   if (!m) return publishedLineFromPicker(todayPickerValue())
   const y = Number(m[1])
@@ -721,7 +772,7 @@ function publishedLineFromPicker(v) {
   return `发布于 ${y}年${mo}月${day}日`
 }
 
-function defaultBlocksTemplate() {
+function defaultBlocksTemplate(): string {
   return [
     '# 开篇导语。',
     '',
@@ -758,7 +809,7 @@ function applyDefaults() {
   isPreview.value = false
 }
 
-async function loadArticle(id) {
+async function loadArticle(id: Id) {
   loading.value = true
   loadError.value = ''
   try {
@@ -767,9 +818,13 @@ async function loadArticle(id) {
       loadError.value = '文章不存在'
       return
     }
-    category.value = a.category
+    if (a.forbidden) {
+      loadError.value = '无权编辑此文章'
+      return
+    }
+    category.value = isArticleCategory(a.category) ? a.category : '随笔'
     visibility.value = a.visibility
-    date.value = a.date
+    date.value = a.date || ''
     datePicker.value = textToPicker(a.date) || todayPickerValue()
     title.value = a.title
     excerpt.value = a.excerpt || ''
@@ -779,7 +834,7 @@ async function loadArticle(id) {
     mdError.value = ''
     isPreview.value = false
   } catch (e) {
-    loadError.value = String(e?.message || '加载失败')
+    loadError.value = getApiErrorMessage(e, '加载失败')
   } finally {
     loading.value = false
   }
@@ -811,19 +866,20 @@ watch(
       loadError.value = ''
       return
     }
-    if (name === 'edit' && id != null && id !== '') {
-      loadArticle(id)
+    const articleId = Array.isArray(id) ? id[0] : id
+    if (name === 'edit' && articleId != null && articleId !== '') {
+      loadArticle(articleId)
     }
   },
   { immediate: true },
 )
 
-function buildPayload() {
+function buildPayload(): ArticlePayload {
   const parsed = parsePaperMarkdown(blocksMd.value)
   if (parsed.error) throw new Error(String(parsed.error))
   const blocks = parsed.blocks
   const authorName = typeof user.value?.name === 'string' && user.value.name.trim() ? user.value.name.trim() : '博主'
-  const payload = {
+  const payload: ArticlePayload = {
     category: category.value,
     visibility: visibility.value,
     date: date.value.trim(),
@@ -832,13 +888,13 @@ function buildPayload() {
     authorName,
     authorPublished: publishedLineFromPicker(datePicker.value),
     blocks,
+    imageUrl: imageUrl.value.trim(),
+    heroImage: heroImage.value.trim(),
   }
-  payload.imageUrl = imageUrl.value.trim()
-  payload.heroImage = heroImage.value.trim()
   return payload
 }
 
-function insertIntoTextarea(el, text) {
+function insertIntoTextarea(el: HTMLTextAreaElement, text: string) {
   const start = el.selectionStart ?? 0
   const end = el.selectionEnd ?? 0
   const v = blocksMd.value
@@ -851,7 +907,7 @@ function insertIntoTextarea(el, text) {
   })
 }
 
-function onMdKeydown(e) {
+function onMdKeydown(e: KeyboardEvent) {
   const el = mdEl.value
   if (!el) return
   if (e.ctrlKey && e.shiftKey && (e.key === 'L' || e.key === 'l')) {
@@ -986,7 +1042,7 @@ function onMdKeydown(e) {
   }
 }
 
-function onWindowKeydown(e) {
+function onWindowKeydown(e: KeyboardEvent) {
   if (!(e.ctrlKey && !e.shiftKey && (e.key === 'S' || e.key === 's'))) return
   e.preventDefault()
   cacheDraftToLocalStorage()
@@ -994,11 +1050,11 @@ function onWindowKeydown(e) {
 
 async function onSave() {
   saveError.value = ''
-  let payload
+  let payload: ArticlePayload
   try {
     payload = buildPayload()
   } catch (e) {
-    saveError.value = String(e?.message || '校验失败')
+    saveError.value = getApiErrorMessage(e, '校验失败')
     return
   }
   saving.value = true
@@ -1007,11 +1063,13 @@ async function onSave() {
       const created = await createArticle(payload)
       router.replace({ name: 'article', params: { id: String(created.id) } })
     } else {
-      await updateArticle(route.params.id, payload)
-      router.replace({ name: 'article', params: { id: String(route.params.id) } })
+      const articleId = currentRouteId()
+      if (!articleId) throw new Error('缺少文章 ID')
+      await updateArticle(articleId, payload)
+      router.replace({ name: 'article', params: { id: String(articleId) } })
     }
   } catch (e) {
-    saveError.value = String(e?.response?.data?.error || e?.message || '保存失败')
+    saveError.value = getApiErrorMessage(e, '保存失败')
   } finally {
     saving.value = false
   }
@@ -1022,7 +1080,8 @@ function reset() {
   if (isNew.value) {
     applyDefaults()
   } else if (route.params.id) {
-    loadArticle(route.params.id)
+    const articleId = currentRouteId()
+    if (articleId) loadArticle(articleId)
   }
 }
 

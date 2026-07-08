@@ -28,15 +28,22 @@
  *   其他文本按空行分段；同一段内如出现换行，会拆成多个 p（每行一个段落）
  */
 
-function isBlank(line) {
+import type { ArticleBlock } from '../types'
+
+export interface ParsePaperMarkdownResult {
+  blocks: ArticleBlock[]
+  error?: string
+}
+
+function isBlank(line: string | undefined): boolean {
   return !line || /^\s*$/.test(line)
 }
 
-function stripPrefix(line, prefix) {
+function stripPrefix(line: string, prefix: string): string {
   return line.startsWith(prefix) ? line.slice(prefix.length) : line
 }
 
-function parseChecklistLine(raw) {
+function parseChecklistLine(raw: string): string | null {
   // "- item text" (item text may contain **bold** and `code`)
   const line = raw.replace(/^\s*-\s+/, '')
   const text = String(line || '').trim()
@@ -44,10 +51,10 @@ function parseChecklistLine(raw) {
   return text
 }
 
-export function parsePaperMarkdown(src) {
+export function parsePaperMarkdown(src: unknown): ParsePaperMarkdownResult {
   const input = typeof src === 'string' ? src.replace(/\r\n/g, '\n') : ''
   const lines = input.split('\n')
-  const blocks = []
+  const blocks: ArticleBlock[] = []
 
   let i = 0
   while (i < lines.length) {
@@ -73,7 +80,7 @@ export function parsePaperMarkdown(src) {
     // :::lead ... :::
     if (/^\s*:::\s*lead\s*$/.test(line)) {
       i += 1
-      const buf = []
+      const buf: string[] = []
       while (i < lines.length && !/^\s*:::\s*$/.test(lines[i])) {
         buf.push(lines[i])
         i += 1
@@ -91,7 +98,7 @@ export function parsePaperMarkdown(src) {
     if (/^\s*```/.test(line)) {
       const lang = stripPrefix(line.trim(), '```').trim()
       i += 1
-      const buf = []
+      const buf: string[] = []
       while (i < lines.length && !/^\s*```/.test(lines[i])) {
         buf.push(lines[i])
         i += 1
@@ -118,7 +125,7 @@ export function parsePaperMarkdown(src) {
 
     // Quote: consecutive > lines
     if (/^\s*>/.test(line)) {
-      const buf = []
+      const buf: string[] = []
       while (i < lines.length && /^\s*>/.test(lines[i])) {
         buf.push(stripPrefix(lines[i].replace(/^\s*/, ''), '>').replace(/^\s*/, ''))
         i += 1
@@ -150,7 +157,7 @@ export function parsePaperMarkdown(src) {
 
     // Checklist: consecutive "- " lines (unordered list)
     if (/^\s*-\s+/.test(line)) {
-      const items = []
+      const items: string[] = []
       while (i < lines.length && /^\s*-\s+/.test(lines[i]) && !isBlank(lines[i])) {
         const parsed = parseChecklistLine(lines[i])
         if (parsed) items.push(parsed)
@@ -168,7 +175,7 @@ export function parsePaperMarkdown(src) {
     }
 
     // Paragraph: gather until blank line
-    const buf = []
+    const buf: string[] = []
     while (i < lines.length && !isBlank(lines[i])) {
       // 碰到下一个块的显式起始，则结束段落
       const t = lines[i].trim()
@@ -201,9 +208,9 @@ export function parsePaperMarkdown(src) {
   return { blocks }
 }
 
-export function blocksToPaperMarkdown(blocks) {
-  const list = Array.isArray(blocks) ? blocks : []
-  const out = []
+export function blocksToPaperMarkdown(blocks: unknown): string {
+  const list = Array.isArray(blocks) ? (blocks as ArticleBlock[]) : []
+  const out: string[] = []
   for (const b of list) {
     if (!b || typeof b !== 'object') continue
 

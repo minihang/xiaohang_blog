@@ -50,42 +50,55 @@
   </article>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { gsap } from 'gsap'
+import type { ArticleVisibility, Id } from '../types'
 import { resolveAssetUrl } from '../utils/assetUrl'
 
-const props = defineProps({
-  id: { type: [String, Number], required: true },
-  category: { type: String, required: true },
-  imageUrl: { type: String, required: true },
-  imageAlt: { type: String, default: '' },
-  date: { type: String, required: true },
-  access: { type: String, default: 'public' }, // public | login | admin
-  isPinned: { type: Boolean, default: false },
-  canPin: { type: Boolean, default: false },
-  pinLoading: { type: Boolean, default: false },
-  title: { type: String, required: true },
-  excerpt: { type: String, required: true },
-  actionText: { type: String, default: '阅读全文' },
-  actionIcon: { type: String, default: 'arrow_right_alt' },
-  /** 列表接口会带上，卡片可不展示 */
-  likeCount: { type: Number, default: undefined },
+interface ArticleCardProps {
+  id: Id
+  category: string
+  imageUrl?: string
+  imageAlt?: string
+  date?: string
+  access?: ArticleVisibility
+  isPinned?: boolean
+  canPin?: boolean
+  pinLoading?: boolean
+  title: string
+  excerpt?: string
+  actionText?: string
+  actionIcon?: string
+  likeCount?: number
+}
+
+const props = withDefaults(defineProps<ArticleCardProps>(), {
+  imageUrl: '',
+  imageAlt: '',
+  date: '',
+  access: 'public',
+  isPinned: false,
+  canPin: false,
+  pinLoading: false,
+  excerpt: '',
+  actionText: '阅读全文',
+  actionIcon: 'arrow_right_alt',
 })
 
-const cardRoot = ref(null)
-let enterHandler
-let leaveHandler
-let cardCtx
+const cardRoot = ref<HTMLElement | null>(null)
+let enterHandler: (() => void) | null = null
+let leaveHandler: (() => void) | null = null
+let cardCtx: ReturnType<typeof gsap.context> | null = null
 
-function prefersReducedMotion() {
+function prefersReducedMotion(): boolean {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 }
 
-defineEmits({
-  read: () => true,
-  'toggle-pin': () => true,
-})
+defineEmits<{
+  read: [id: Id]
+  'toggle-pin': [id: Id]
+}>()
 
 const accessLabel = computed(() => {
   if (props.access === 'login') return '登录可见'
@@ -106,15 +119,16 @@ const accessClass = computed(() => {
 })
 
 onMounted(() => {
-  if (!cardRoot.value || prefersReducedMotion()) return
+  const root = cardRoot.value
+  if (!root || prefersReducedMotion()) return
 
   cardCtx = gsap.context(() => {
-    const img = cardRoot.value.querySelector('.article-card__img')
-    const title = cardRoot.value.querySelector('.article-card__title')
-    const icon = cardRoot.value.querySelector('.article-card__btn-icon')
+    const img = root.querySelector('.article-card__img')
+    const title = root.querySelector('.article-card__title')
+    const icon = root.querySelector('.article-card__btn-icon')
 
     enterHandler = () => {
-      gsap.to(cardRoot.value, {
+      gsap.to(root, {
         y: -6,
         scale: 1.006,
         duration: 0.32,
@@ -142,7 +156,7 @@ onMounted(() => {
     }
 
     leaveHandler = () => {
-      gsap.to(cardRoot.value, {
+      gsap.to(root, {
         y: 0,
         scale: 1,
         duration: 0.34,
@@ -166,15 +180,16 @@ onMounted(() => {
       })
     }
 
-    cardRoot.value.addEventListener('mouseenter', enterHandler)
-    cardRoot.value.addEventListener('mouseleave', leaveHandler)
-  }, cardRoot.value)
+    root.addEventListener('mouseenter', enterHandler)
+    root.addEventListener('mouseleave', leaveHandler)
+  }, root)
 })
 
 onUnmounted(() => {
-  if (cardRoot.value) {
-    if (enterHandler) cardRoot.value.removeEventListener('mouseenter', enterHandler)
-    if (leaveHandler) cardRoot.value.removeEventListener('mouseleave', leaveHandler)
+  const root = cardRoot.value
+  if (root) {
+    if (enterHandler) root.removeEventListener('mouseenter', enterHandler)
+    if (leaveHandler) root.removeEventListener('mouseleave', leaveHandler)
   }
   cardCtx?.revert()
 })

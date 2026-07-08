@@ -111,19 +111,20 @@
   </aside>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '../stores/auth'
 import { resolveAssetUrl } from '../utils/assetUrl'
 import { fetchArticleById } from '../api/articles'
+import type { Article, ArticleBlock, ArticleCategory } from '../types'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const { isLoggedIn, user } = storeToRefs(auth)
-const tocArticle = ref(null)
+const tocArticle = ref<Article | null>(null)
 const tocLoading = ref(false)
 
 const isArticleRoute = computed(() => route.name === 'article')
@@ -137,11 +138,11 @@ const tocTitle = computed(() => {
 const tocItems = computed(() => {
   const blocks = Array.isArray(tocArticle.value?.blocks) ? tocArticle.value.blocks : []
   return blocks
-    .map((block, index) => ({ block, index }))
+    .map((block: ArticleBlock, index: number) => ({ block, index }))
     .filter(({ block }) => block?.type === 'h2' && typeof block.text === 'string' && block.text.trim())
     .map(({ block, index }) => ({
       id: `paper-heading-${index}`,
-      text: stripInlineMarkdown(block.text),
+      text: stripInlineMarkdown(block.text || ''),
     }))
 })
 
@@ -162,14 +163,14 @@ const signatureText = computed(() => {
   return '暂无个人签名'
 })
 
-function isActive(key) {
+function isActive(key: 'all' | ArticleCategory): boolean {
   if (route.name !== 'home') return false
   const q = route.query.cat
   if (key === 'all') return !q || q === 'all'
   return q === key
 }
 
-function stripInlineMarkdown(text) {
+function stripInlineMarkdown(text: string): string {
   return String(text || '')
     .replace(/`([^`]+)`/g, '$1')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
@@ -178,8 +179,9 @@ function stripInlineMarkdown(text) {
     .trim()
 }
 
-function onTocClick(event) {
-  const targetId = event.currentTarget?.getAttribute('href')?.slice(1)
+function onTocClick(event: MouseEvent) {
+  const currentTarget = event.currentTarget as HTMLAnchorElement | null
+  const targetId = currentTarget?.getAttribute('href')?.slice(1)
   if (!targetId) return
   const target = document.getElementById(targetId)
   if (!target) return
@@ -202,13 +204,14 @@ function onBackHome() {
 }
 
 watch(
-  () => [route.name, route.params.id],
-  async ([name, id]) => {
+  () => ({ name: route.name, id: route.params.id }),
+  async ({ name, id }) => {
     tocArticle.value = null
-    if (name !== 'article' || !id) return
+    const articleId = Array.isArray(id) ? id[0] : id
+    if (name !== 'article' || !articleId) return
     tocLoading.value = true
     try {
-      const data = await fetchArticleById(id)
+      const data = await fetchArticleById(articleId)
       tocArticle.value = data && !data.forbidden ? data : null
     } catch {
       tocArticle.value = null

@@ -43,7 +43,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -51,7 +51,9 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import ArticleCard from '../components/ArticleCard.vue'
 import { fetchArticleList, toggleArticlePin } from '../api/articles'
+import { getApiErrorMessage } from '../api/http'
 import { useAuthStore } from '../stores/auth'
+import type { Article, ArticleCategory, Id } from '../types'
 
 const router = useRouter()
 const route = useRoute()
@@ -59,7 +61,9 @@ const authStore = useAuthStore()
 const { canManageArticles } = storeToRefs(authStore)
 
 /** 与 SideNavBar 分类一致：all | 随笔 | 科研 | 开发 */
-const HEADER_BY_CAT = {
+type HeaderKey = 'all' | ArticleCategory
+
+const HEADER_BY_CAT: Record<HeaderKey, { title: string; subtitle: string }> = {
   all: {
     title: '所有文章',
     subtitle:
@@ -82,15 +86,15 @@ const HEADER_BY_CAT = {
   },
 }
 
-function normalizeCatQuery(raw) {
+function normalizeCatQuery(raw: unknown): string | null | undefined {
   if (Array.isArray(raw)) return raw[0]
-  return raw
+  return typeof raw === 'string' ? raw : undefined
 }
 
-const activeCatKey = computed(() => {
+const activeCatKey = computed<HeaderKey>(() => {
   const q = normalizeCatQuery(route.query.cat)
   if (!q || q === 'all') return 'all'
-  if (Object.prototype.hasOwnProperty.call(HEADER_BY_CAT, q)) return q
+  if (Object.prototype.hasOwnProperty.call(HEADER_BY_CAT, q)) return q as HeaderKey
   return 'all'
 })
 
@@ -103,18 +107,18 @@ const currentPage = computed(() => {
   return Number.isFinite(p) && p >= 1 ? Math.floor(p) : 1
 })
 
-const articles = ref([])
+const articles = ref<Article[]>([])
 const total = ref(0)
 const totalPages = ref(1)
 const listLoading = ref(true)
 const listError = ref('')
 const pinBusyId = ref('')
-const homeRoot = ref(null)
+const homeRoot = ref<HTMLElement | null>(null)
 
-let introCtx
-let listCtx
+let introCtx: ReturnType<typeof gsap.context> | null = null
+let listCtx: ReturnType<typeof gsap.context> | null = null
 
-function prefersReducedMotion() {
+function prefersReducedMotion(): boolean {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 }
 
@@ -129,19 +133,19 @@ const pageNumbers = computed(() => {
   let start = Math.max(1, end - windowSize + 1)
   end = Math.min(tp, start + windowSize - 1)
   start = Math.max(1, end - windowSize + 1)
-  const out = []
+  const out: number[] = []
   for (let i = start; i <= end; i += 1) out.push(i)
   return out
 })
 
-function homeQueryForPage(page) {
-  const q = {}
+function homeQueryForPage(page: number): Record<string, string> {
+  const q: Record<string, string> = {}
   if (activeCatKey.value !== 'all') q.cat = activeCatKey.value
   if (page > 1) q.page = String(page)
   return q
 }
 
-function goToPage(page) {
+function goToPage(page: number) {
   if (page < 1 || page > totalPages.value) return
   router.push({ name: 'home', query: homeQueryForPage(page) })
 }
@@ -162,7 +166,7 @@ async function loadList() {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   } catch (e) {
-    listError.value = String(e?.message || '加载失败')
+    listError.value = getApiErrorMessage(e, '加载失败')
     articles.value = []
     total.value = 0
     totalPages.value = 1
@@ -183,7 +187,8 @@ watch(
     listCtx?.revert()
     listCtx = null
     await nextTick()
-    if (!homeRoot.value || articles.value.length === 0) return
+    const root = homeRoot.value
+    if (!root || articles.value.length === 0) return
 
     listCtx = gsap.context(() => {
       if (prefersReducedMotion()) {
@@ -197,7 +202,7 @@ watch(
         return
       }
 
-      const cards = gsap.utils.toArray('.article-card')
+      const cards = gsap.utils.toArray<HTMLElement>('.article-card')
       cards.forEach((card) => {
         const media = card.querySelector('.article-card__media')
         const badge = card.querySelector('.article-card__badge-wrap')
@@ -263,7 +268,7 @@ watch(
       )
 
       ScrollTrigger.refresh()
-    }, homeRoot.value)
+    }, root)
   },
   { flush: 'post' },
 )
@@ -273,9 +278,10 @@ watch(
   async (id) => {
     if (!id || prefersReducedMotion()) return
     await nextTick()
-    if (!homeRoot.value) return
+    const root = homeRoot.value
+    if (!root) return
 
-    const card = homeRoot.value.querySelector(`.article-card[data-article-id="${CSS.escape(String(id))}"]`)
+    const card = root.querySelector(`.article-card[data-article-id="${CSS.escape(String(id))}"]`)
     if (!card) return
     gsap.fromTo(
       card,
@@ -297,9 +303,10 @@ watch(
   async (value) => {
     if (!value) return
     await nextTick()
-    if (!homeRoot.value) return
+    const root = homeRoot.value
+    if (!root) return
 
-    const cta = homeRoot.value.querySelector('.primary-cta')
+    const cta = root.querySelector('.primary-cta')
     if (!cta) return
     gsap.set(cta, { autoAlpha: 1, y: 0, scale: 1, clearProps: 'opacity,visibility,transform' })
   },
@@ -307,7 +314,8 @@ watch(
 )
 
 onMounted(() => {
-  if (!homeRoot.value) return
+  const root = homeRoot.value
+  if (!root) return
   introCtx = gsap.context(() => {
     if (prefersReducedMotion()) return
 
@@ -315,7 +323,7 @@ onMounted(() => {
     tl.from('.page-header__title', { autoAlpha: 0, y: 26 })
       .from('.page-header__subtitle', { autoAlpha: 0, y: 18 }, '<0.12')
       .from('.empty-tip, .pager, .pager-meta', { autoAlpha: 0, y: 14, duration: 0.45 }, '<0.1')
-  }, homeRoot.value)
+  }, root)
 })
 
 onUnmounted(() => {
@@ -323,18 +331,18 @@ onUnmounted(() => {
   listCtx?.revert()
 })
 
-function onRead(id) {
+function onRead(id: Id) {
   router.push({ name: 'article', params: { id: String(id) } })
 }
 
-async function onTogglePin(id) {
+async function onTogglePin(id: Id) {
   if (!canManageArticles.value || pinBusyId.value) return
   pinBusyId.value = String(id)
   try {
     await toggleArticlePin(id)
     await loadList()
   } catch (e) {
-    listError.value = String(e?.response?.data?.error || e?.message || '置顶失败')
+    listError.value = getApiErrorMessage(e, '置顶失败')
   } finally {
     pinBusyId.value = ''
   }

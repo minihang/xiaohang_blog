@@ -12,13 +12,12 @@
   </div>
 </template>
 
-<script setup>
-defineProps({
-  toast: {
-    type: Object,
-    required: true,
-  },
-})
+<script setup lang="ts">
+import type { ToastStore } from '../plugins/toast'
+
+defineProps<{
+  toast: ToastStore
+}>()
 </script>
 
 <style scoped lang="postcss">

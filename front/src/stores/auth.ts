@@ -1,17 +1,14 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import type { AuthPayload, BlogUser } from '../types'
 import { apiLogin, apiRegister } from '../api/auth'
-
-/** @typedef {'guest' | 'user' | 'admin'} UserRole */
 
 const AUTH_STORAGE_KEY = 'blog_auth_v1'
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref(null)
-  /** @type {import('vue').Ref<null | { id?: string | number; name?: string; role?: UserRole; [key: string]: unknown }>} */
-  const user = ref(null)
-  /** @type {import('vue').Ref<string[]>} */
-  const permissions = ref([])
+  const token = ref<string | null>(null)
+  const user = ref<BlogUser | null>(null)
+  const permissions = ref<string[]>([])
 
   const isLoggedIn = computed(() => Boolean(token.value && user.value))
 
@@ -27,17 +24,17 @@ export const useAuthStore = defineStore('auth', () => {
 
   const canManageArticles = computed(() => isAdmin.value)
 
-  function hasPermission(perm) {
+  function hasPermission(perm?: string | null) {
     if (!perm) return true
     return permissions.value.includes(perm)
   }
 
-  function hasAnyPermission(perms) {
+  function hasAnyPermission(perms?: string[] | null) {
     if (!perms?.length) return true
     return perms.some((p) => permissions.value.includes(p))
   }
 
-  function hasAllPermissions(perms) {
+  function hasAllPermissions(perms?: string[] | null) {
     if (!perms?.length) return true
     return perms.every((p) => permissions.value.includes(p))
   }
@@ -65,7 +62,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const raw = localStorage.getItem(AUTH_STORAGE_KEY)
       if (!raw) return
-      const data = JSON.parse(raw)
+      const data = JSON.parse(raw) as Partial<AuthPayload>
       if (data?.token && data?.user) {
         token.value = data.token
         user.value = { ...data.user }
@@ -76,7 +73,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function login(payload) {
+  function login(payload: AuthPayload) {
     token.value = payload.token
     user.value = payload.user ? { ...payload.user } : null
     permissions.value = Array.isArray(payload.permissions) ? [...payload.permissions] : []
@@ -90,14 +87,14 @@ export const useAuthStore = defineStore('auth', () => {
     persistSession()
   }
 
-  function setPermissions(next) {
+  function setPermissions(next: unknown) {
     permissions.value = Array.isArray(next) ? [...next] : []
   }
 
   /** 合并服务端返回的用户字段（头像、显示名、签名等） */
-  function applyUser(next) {
+  function applyUser(next: unknown) {
     if (!next || typeof next !== 'object') return
-    user.value = { ...(user.value || {}), ...next }
+    user.value = { ...(user.value || {}), ...(next as BlogUser) }
     persistSession()
   }
 
@@ -105,7 +102,9 @@ export const useAuthStore = defineStore('auth', () => {
    * @param {{ username: string; password: string }} creds
    * @returns {Promise<{ ok: true } | { ok: false; error: string }>}
    */
-  async function loginWithCredentials(creds) {
+  async function loginWithCredentials(creds: { username: string; password: string }): Promise<
+    { ok: true } | { ok: false; error: string }
+  > {
     const r = await apiLogin({
       username: String(creds.username || '').trim(),
       password: String(creds.password || ''),
@@ -123,7 +122,11 @@ export const useAuthStore = defineStore('auth', () => {
    * @param {{ username: string; password: string; signature?: string }} input
    * @returns {Promise<{ ok: true } | { ok: false; error: string }>}
    */
-  async function registerAndLogin(input) {
+  async function registerAndLogin(input: {
+    username: string
+    password: string
+    signature?: string
+  }): Promise<{ ok: true } | { ok: false; error: string }> {
     const r = await apiRegister({
       username: String(input.username || '').trim(),
       password: String(input.password || ''),
