@@ -1,6 +1,7 @@
 import axios from 'axios'
 
 const AUTH_STORAGE_KEY = 'blog_auth_v1'
+export const AUTH_EXPIRED_EVENT = 'blog-auth-expired'
 
 interface ApiErrorBody {
   error?: string
@@ -34,6 +35,20 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = getApiErrorStatus(error)
+    const requestUrl = axios.isAxiosError(error) ? String(error.config?.url || '') : ''
+    const isAuthRequest = requestUrl.includes('/api/auth/login') || requestUrl.includes('/api/auth/register')
+    if (status === 401 && getStoredToken() && !isAuthRequest) {
+      localStorage.removeItem(AUTH_STORAGE_KEY)
+      window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT))
+    }
+    return Promise.reject(error)
+  },
+)
 
 export function getApiErrorData(error: unknown): ApiErrorBody {
   if (axios.isAxiosError<ApiErrorBody>(error)) {

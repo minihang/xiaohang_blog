@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import type { AuthPayload, BlogUser } from '../types'
 import { apiLogin, apiRegister } from '../api/auth'
+import { AUTH_EXPIRED_EVENT } from '../api/http'
 
 const AUTH_STORAGE_KEY = 'blog_auth_v1'
 
@@ -73,6 +74,17 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  function clearSession() {
+    token.value = null
+    user.value = null
+    permissions.value = []
+    try {
+      localStorage.removeItem(AUTH_STORAGE_KEY)
+    } catch {
+      /* ignore */
+    }
+  }
+
   function login(payload: AuthPayload) {
     token.value = payload.token
     user.value = payload.user ? { ...payload.user } : null
@@ -81,10 +93,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function logout() {
-    token.value = null
-    user.value = null
-    permissions.value = []
-    persistSession()
+    clearSession()
   }
 
   function setPermissions(next: unknown) {
@@ -142,6 +151,10 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   hydrateSession()
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener(AUTH_EXPIRED_EVENT, clearSession)
+  }
 
   return {
     token,
