@@ -64,7 +64,8 @@
         <div class="paper-card">
           <article class="paper-article">
             <template v-for="(block, i) in article.blocks" :key="i">
-              <p v-if="block.type === 'lead'" class="paper-article__lead" v-html="renderInlineMarkdown(block.text)"></p>
+              <p v-if="block.type === 'lead'" :id="getHeadingId(i)" class="paper-article__lead"
+                v-html="renderInlineMarkdown(block.text)"></p>
               <h2 v-else-if="block.type === 'h2'" :id="getHeadingId(i)" class="paper-article__h2">
                 <span class="paper-article__h2-bar paper-article__h2-bar--primary"></span>
                 <span v-html="renderInlineMarkdown(block.text)"></span>
@@ -498,6 +499,7 @@ async function onDeleteArticle() {
 
 .paper-article__lead {
   @apply font-medium text-xl text-primary leading-relaxed;
+  scroll-margin-top: 6rem;
 }
 
 .paper-article__h2 {

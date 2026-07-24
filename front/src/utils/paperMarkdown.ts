@@ -5,10 +5,11 @@
  *
  * 语法约定（尽量宽松，方便手写）：
  * - Lead（页面显示为“二级标题”）:
- *   # text
+ *   ## text
+ *   ####标题 -> 标题内容为“##标题”
  *   （兼容旧语法：:::lead ... :::）
  * - H2:
- *   ## text
+ *   # text
  * - Quote:
  *   > line1
  *   > line2
@@ -65,16 +66,13 @@ export function parsePaperMarkdown(src: unknown): ParsePaperMarkdownResult {
       continue
     }
 
-    // # text  -> lead (single-line)
-    // （注意：这里用 # 映射成 lead，是本项目定制语法，不是标准 Markdown 的 h1）
-    if (/^\s*#(?!#)/.test(line)) {
-      const m = line.trim().match(/^#\s+(.*)$/)
-      if (m) {
-        const text = String(m[1] || '').trim()
-        if (text) blocks.push({ type: 'lead', text })
-        i += 1
-        continue
-      }
+    // 开头的前两个 # 是 lead 标记，后续 # 属于标题文本
+    const lead = line.trim().match(/^##(.*)$/)
+    if (lead) {
+      const text = String(lead[1] || '').trim()
+      if (text) blocks.push({ type: 'lead', text })
+      i += 1
+      continue
     }
 
     // :::lead ... :::
@@ -112,15 +110,13 @@ export function parsePaperMarkdown(src: unknown): ParsePaperMarkdownResult {
       continue
     }
 
-    // ## text
-    if (/^\s*##/.test(line)) {
-      const m = line.trim().match(/^##\s+(.*)$/)
-      if (m) {
-        const text = String(m[1] || '').trim()
-        if (text) blocks.push({ type: 'h2', text })
-        i += 1
-        continue
-      }
+    // 开头的一个 # 是 h2 标记
+    const h2 = line.trim().match(/^#(?!#)(.*)$/)
+    if (h2) {
+      const text = String(h2[1] || '').trim()
+      if (text) blocks.push({ type: 'h2', text })
+      i += 1
+      continue
     }
 
     // Quote: consecutive > lines
@@ -180,10 +176,9 @@ export function parsePaperMarkdown(src: unknown): ParsePaperMarkdownResult {
       // 碰到下一个块的显式起始，则结束段落
       const t = lines[i].trim()
       if (
-        /^\s*#(?!#)\s+/.test(t) ||
+        /^\s*#/.test(t) ||
         /^\s*:::\s*lead\s*$/.test(t) ||
         /^\s*```/.test(t) ||
-        /^\s*##/.test(t) ||
         /^\s*>/.test(t) ||
         /^!\[[^\]]*\]\(([^)]+)\)\s*$/.test(t) ||
         /^\[([^\]\n]+)\]\(([^)\n]+)\)\s*$/.test(t)
@@ -215,13 +210,13 @@ export function blocksToPaperMarkdown(blocks: unknown): string {
     if (!b || typeof b !== 'object') continue
 
     if (b.type === 'lead') {
-      out.push(`# ${String(b.text || '').trim()}`)
+      out.push(`## ${String(b.text || '').trim()}`)
       out.push('')
       continue
     }
 
     if (b.type === 'h2') {
-      out.push(`## ${String(b.text || '').trim()}`)
+      out.push(`# ${String(b.text || '').trim()}`)
       out.push('')
       continue
     }

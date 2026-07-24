@@ -923,12 +923,12 @@ function onMdKeydown(e: KeyboardEvent) {
   }
   if (e.ctrlKey && !e.shiftKey && e.key === '2') {
     e.preventDefault()
-    insertIntoTextarea(el, '\n## ')
+    insertIntoTextarea(el, '\n# ')
     return
   }
   if (e.ctrlKey && !e.shiftKey && e.key === '3') {
     e.preventDefault()
-    insertIntoTextarea(el, '\n# ')
+    insertIntoTextarea(el, '\n## ')
     return
   }
   if (e.ctrlKey && e.shiftKey && (e.code === 'Backquote' || e.key === '`')) {

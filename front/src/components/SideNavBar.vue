@@ -19,6 +19,7 @@
         v-for="item in tocItems"
         :key="item.id"
         class="side-nav__toc-link"
+        :class="{ 'side-nav__toc-link--sub': item.level === 2 }"
         :href="`#${item.id}`"
         @click="onTocClick"
       >
@@ -139,10 +140,14 @@ const tocItems = computed(() => {
   const blocks = Array.isArray(tocArticle.value?.blocks) ? tocArticle.value.blocks : []
   return blocks
     .map((block: ArticleBlock, index: number) => ({ block, index }))
-    .filter(({ block }) => block?.type === 'h2' && typeof block.text === 'string' && block.text.trim())
+    .filter(
+      ({ block }) =>
+        (block?.type === 'h2' || block?.type === 'lead') && typeof block.text === 'string' && block.text.trim(),
+    )
     .map(({ block, index }) => ({
       id: `paper-heading-${index}`,
       text: stripInlineMarkdown(block.text || ''),
+      level: block.type === 'lead' ? 2 : 1,
     }))
 })
 
@@ -258,6 +263,10 @@ watch(
 
 .side-nav__toc-link {
   @apply block rounded-2xl px-4 py-2.5 text-sm font-semibold leading-snug text-slate-600 no-underline hover:bg-sky-100/70 hover:text-sky-800 transition-colors;
+}
+
+.side-nav__toc-link--sub {
+  @apply ml-4 border-l-2 border-sky-100 rounded-l-none pl-3 text-[0.8125rem] font-medium text-slate-500;
 }
 
 .side-nav__toc-empty {
