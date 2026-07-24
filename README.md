@@ -64,7 +64,7 @@ npm run seed
 - 上传文件：`/uploads/*`（位于 `serve/data/uploads/`）
 
 ### 2) 启动前端
-
+node 版本 22.14.0
 ```bash
 cd front
 npm install
